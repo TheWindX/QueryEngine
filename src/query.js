@@ -1,11 +1,10 @@
-let util = require('util')
-let inspect = (x)=>{
-    console.log(util.inspect(x))
-}
+let assert = require('assert')
+let util = require('./util')
 
+class IFact {}
 //const fail = Symbol('fail')
 // let placeHold = Symbol('ok')
-class IFactAtom {
+class IFactAtom extends IFact {
     run(st){
         return [st, null]
     }
@@ -19,8 +18,9 @@ let err = new IFactAtom()
 err.run = ()=> null
 
 
-class IFactAll {
+class IFactAll extends IFact {
     constructor(facts = [], combinator = null){
+        super()
         this.facts = facts
         this.combinator = combinator
     }
@@ -31,8 +31,9 @@ class IFactAll {
     }
 }
 
-class IFactAny {
+class IFactAny extends IFact {
     constructor(facts = []){
+        super()
         this.facts = facts
     }
 
@@ -43,8 +44,9 @@ class IFactAny {
 }
 
 
-class IFactNot {
+class IFactNot extends IFact{
     constructor(fact){
+        super()
         this.fact = fact
     }
 }
@@ -74,6 +76,10 @@ function* queryAll(facts, st){
 }
 
 function* query(fact, st){
+    if(!(fact instanceof IFact)){
+        assert.fail(util.callstack())
+    }
+    
     if(fact instanceof IFactAtom){
         let res = fact.run(st)
         if(res != null) yield res
@@ -95,11 +101,11 @@ function* query(fact, st){
         }
     } else if(fact instanceof IFactNot){
         let ress = query(fact.fact, st)
-        let found = false
+        let notFound = true
         for(let res of ress){
-            found = true
+            notFound = false
         }
-        if(!found) [null, st]
+        if(notFound) yield [st, []]
     }
 }
 
@@ -122,7 +128,6 @@ let many = (f)=>{
     let f2 = any(f1, ok)
     f1.push(f2)
     f1.combinator = (a,b)=>{
-        console.log(a, b)
         if(b instanceof Array){
             b.unshift(a)
             return b
@@ -158,4 +163,13 @@ let argument = (judge)=>{
     return f
 }
 
-module.exports = {zero_one, many, many_one, any, all, not, err, argument, cut, cutTrue, cutFalse, query}
+let until = (skipFact, untilFact)=> {
+    let f1 = many(all(not(untilFact), skipFact))
+    let f2 = all(f1, untilFact)
+    f2.combinator = (a, b)=>{
+        return b
+    }
+    return f2
+}
+
+module.exports = {zero_one, many, many_one, any, all, not, until, err, argument, cut, cutTrue, cutFalse, query}
