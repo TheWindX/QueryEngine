@@ -1,5 +1,5 @@
-let assert = require('assert')
-let util = require('./util')
+const assert = require('assert')
+const util = require('./util')
 
 class IFact {}
 //const fail = Symbol('fail')
@@ -10,13 +10,17 @@ class IFactAtom extends IFact {
     }
 }
 
+class IFactCut extends IFact {}
+
+
 // [] is unit for combination
-let ok = new IFactAtom()
+const ok = new IFactAtom()
 ok.run = (st)=>[st, []]
 
-let err = new IFactAtom()
-err.run = ()=> null
+const err = new IFactAtom()
+err.run = (st)=> null
 
+const cut = new IFactCut()
 
 class IFactAll extends IFact {
     constructor(facts = [], combinator = null){
@@ -51,33 +55,47 @@ class IFactNot extends IFact{
     }
 }
 
-const cut = Symbol()
-const cutTrue = Symbol()
-const cutFalse = Symbol()
-
 function* queryAll(facts, st){
     if(facts.length == 0){
         yield [st, []]
     } else {
         let f1 = facts[0]
         let fo = facts.slice(1)
+        if(f1 == cut){
+            let st1 = st
+            for(let [st2, r2] of queryAll(fo, st1)){
+                if(r2 instanceof Array){
+                    yield [st2, r2]
+                }
+            }
+            throw cut
+        }
         for(let [st1, r1] of query(f1, st)){
             for(let [st2, r2] of queryAll(fo, st1)){
                 if(r2 instanceof Array){
                     r2.unshift(r1)
                     yield [st2, r2]
                 }
-                // else {
-                //     yield [st2, [r1]]
-                // }
             }
+        }
+    }
+}
+
+function* queryException(fact, st){
+    try {
+        yield* query(fact, st)
+    } catch(ex){
+        if(ex === cut){
+            return
+        } else {
+            throw ex
         }
     }
 }
 
 function* query(fact, st){
     if(!(fact instanceof IFact)){
-        assert.fail(util.callstack())
+        assert.fail(util.inspect(fact))
     }
     
     if(fact instanceof IFactAtom){
@@ -172,4 +190,5 @@ let until = (skipFact, untilFact)=> {
     return f2
 }
 
-module.exports = {zero_one, many, many_one, any, all, not, until, err, argument, cut, cutTrue, cutFalse, query}
+
+module.exports = {zero_one, many, many_one, any, all, not, until, err, argument, cut, query:queryException}
