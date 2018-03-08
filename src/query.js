@@ -81,6 +81,51 @@ function* queryAll(facts, st){
     }
 }
 
+function* queryAll2(facts, st){
+    let idx1 = facts.length-2
+    let idx2 = idx1+1
+    let iterArr = []
+    let st1 = st
+    let resArr = []
+    for(let fact of facts){
+        let iter = query(fact, st1)
+        let {value:res, done} = iter.next()
+        resArr.push(res[1]) //value
+        if(done){
+            return
+        }
+        st1 = res[0]
+        iterArr.push([fact, iter, st1])
+    }
+    yield {st1, resArr}
+    
+    let lastIdx = facts.length-1
+    last:
+    for(;true;){
+        every_iter:
+        for(let idx = lastIdx; idx>-1; --idx){
+            let iterArrItem = iterArr[idx]
+            st1 = iterArrItem[2]
+            sub_iter:
+            for(let subIdx = idx+1; subIdx <= lastIdx; ++subIdx){
+                let iterArrItem = iterArr[subIdx]
+                let fact = iterArrItem[0]
+                let iter = query(fact, st1)
+                let {value:res, done} = iter.next()
+                if(done){
+                    continue every_iter
+                } else {
+                    iterArrItem[1] = iter
+                    st1 = res[0]
+                    iterArrItem[2] = st1
+                    continue sub_iter
+                }
+            }
+            yield {st1, resArr}
+        }
+    }
+}
+
 function* queryException(fact, st){
     try {
         yield* query(fact, st)
