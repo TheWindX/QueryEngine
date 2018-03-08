@@ -11,8 +11,9 @@ class IFactAtom {
     }
 }
 
+// [] is unit for combination
 let ok = new IFactAtom()
-ok.run = (st)=>[st, null]
+ok.run = (st)=>[st, []]
 
 let err = new IFactAtom()
 err.run = ()=> null
@@ -121,6 +122,7 @@ let many = (f)=>{
     let f2 = any(f1, ok)
     f1.push(f2)
     f1.combinator = (a,b)=>{
+        console.log(a, b)
         if(b instanceof Array){
             b.unshift(a)
             return b
