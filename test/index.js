@@ -55,9 +55,7 @@ class Parser {
             if(idx == this.src.length) return null
             return [idx+1, []]
         })
-        let f1 = q.all(this.testAny("1234", "12345"), q.cut, q.until(skip, this.testAny('9999', "8888")) )
-        //let f2 = q.all(this.testWord('1234'))//, this.testUtil(this.testAny('9999', "8888")) )
-        //let f3 = q.any(f1, f2)
+        let f1 = q.all(this.testAny("1234", "12345"), q.until(skip, this.testAny('9999', "8888")))
         return f1
     }
 }
@@ -143,13 +141,8 @@ for(let i of p6){
 assert.equal(test, 1);test = 0
 
 let p7 = q.query((new Parser('12345678alskdjfasdf333839999,8888a')).testCut(), 0)
-for(let i of p7){
-    inspect(i)
-    test++
-}
-assert.equal(test, 1);test = 0
-
-
+assert.deepStrictEqual(p7.next().value, [28, ['1234', '9999']])
+assert.deepStrictEqual(p7.next().value, [28, ['12345', '9999']])
 
 
 console.log('pass all test')

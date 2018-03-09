@@ -55,7 +55,7 @@ class IFactNot extends IFact{
     }
 }
 
-function* queryAll(facts, st){
+function* queryAllOld(facts, st){
     if(facts.length == 0){
         yield [st, []]
     } else {
@@ -81,47 +81,46 @@ function* queryAll(facts, st){
     }
 }
 
-function* queryAll2(facts, st){
-    let idx1 = facts.length-2
-    let idx2 = idx1+1
-    let iterArr = []
-    let st1 = st
-    let resArr = []
-    for(let fact of facts){
-        let iter = query(fact, st1)
-        let {value:res, done} = iter.next()
-        resArr.push(res[1]) //value
-        if(done){
-            return
-        }
-        st1 = res[0]
-        iterArr.push([fact, iter, st1])
-    }
-    yield {st1, resArr}
-    
+function* queryAll(facts, st){
     let lastIdx = facts.length-1
-    last:
+    let frame = []
+
+    let fact = facts[0]
+    let iter = query(fact, st)
+    frame.push([iter])
+    let vals = []
+    iterNext:
     for(;true;){
-        every_iter:
-        for(let idx = lastIdx; idx>-1; --idx){
-            let iterArrItem = iterArr[idx]
-            st1 = iterArrItem[2]
-            sub_iter:
-            for(let subIdx = idx+1; subIdx <= lastIdx; ++subIdx){
-                let iterArrItem = iterArr[subIdx]
-                let fact = iterArrItem[0]
-                let iter = query(fact, st1)
+        let idx = frame.length-1
+        let [iter] = frame[idx]
+        let {value:res, done} = iter.next()
+        if(done){
+            let fact = facts[idx]
+            if(fact == cut) {
+                throw cut
+            }
+            frame.pop()
+            if(frame.length == 0) return
+            continue iterNext
+        } else { 
+            let [st, val] = res
+            vals[idx] = val
+            flush:
+            for(let i = idx+1; i<=lastIdx; ++i){
+                let fact = facts[i]
+                let iter = query(fact, st)
                 let {value:res, done} = iter.next()
                 if(done){
-                    continue every_iter
+                    continue iterNext
                 } else {
-                    iterArrItem[1] = iter
-                    st1 = res[0]
-                    iterArrItem[2] = st1
-                    continue sub_iter
+                    frame.push([iter])
+                    st = res[0]
+                    val = res[1]
+                    vals[i] = val
+                    continue flush
                 }
             }
-            yield {st1, resArr}
+            yield [st, vals]
         }
     }
 }
@@ -169,6 +168,8 @@ function* query(fact, st){
             notFound = false
         }
         if(notFound) yield [st, []]
+    } else if(fact instanceof IFactCut){
+        yield [st, null]
     }
 }
 
