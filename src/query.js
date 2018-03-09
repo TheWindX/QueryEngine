@@ -55,7 +55,7 @@ class IFactNot extends IFact{
     }
 }
 
-function* queryAll(facts, st){
+function* queryAllOld(facts, st){
     if(facts.length == 0){
         yield [st, []]
     } else {
@@ -77,6 +77,50 @@ function* queryAll(facts, st){
                     yield [st2, r2]
                 }
             }
+        }
+    }
+}
+
+function* queryAll(facts, st){
+    let lastIdx = facts.length-1
+    let frame = []
+
+    let fact = facts[0]
+    let iter = query(fact, st)
+    frame.push([iter])
+    let vals = []
+    iterNext:
+    for(;true;){
+        let idx = frame.length-1
+        let [iter] = frame[idx]
+        let {value:res, done} = iter.next()
+        if(done){
+            let fact = facts[idx]
+            if(fact == cut) {
+                throw cut
+            }
+            frame.pop()
+            if(frame.length == 0) return
+            continue iterNext
+        } else { 
+            let [st, val] = res
+            vals[idx] = val
+            flush:
+            for(let i = idx+1; i<=lastIdx; ++i){
+                let fact = facts[i]
+                let iter = query(fact, st)
+                let {value:res, done} = iter.next()
+                if(done){
+                    continue iterNext
+                } else {
+                    frame.push([iter])
+                    st = res[0]
+                    val = res[1]
+                    vals[i] = val
+                    continue flush
+                }
+            }
+            yield [st, vals]
         }
     }
 }
@@ -124,6 +168,8 @@ function* query(fact, st){
             notFound = false
         }
         if(notFound) yield [st, []]
+    } else if(fact instanceof IFactCut){
+        yield [st, null]
     }
 }
 
