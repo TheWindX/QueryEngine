@@ -2,8 +2,6 @@ const assert = require('assert')
 const util = require('./util')
 
 class IFact {}
-//const fail = Symbol('fail')
-// let placeHold = Symbol('ok')
 class IFactAtom extends IFact {
     run(st){
         return [st, null]
@@ -11,7 +9,6 @@ class IFactAtom extends IFact {
 }
 
 class IFactCut extends IFact {}
-
 
 // [] is unit for combination
 const ok = new IFactAtom()
@@ -153,12 +150,49 @@ function* query(fact, st){
             }
         }
     } else if(fact instanceof IFactAll){
-        let ress = queryAll(fact.facts, st)
-        for(let [st1, res1] of ress){
-            if(fact.combinator){
-                yield [st1, fact.combinator(...res1)]
-            } else {
-                yield [st1, res1]
+        let frame = []
+        let facts = fact.facts
+        let lastIdx = facts.length-1
+        fact1 = facts[0]
+        let iter = query(fact1, st)
+        frame.push([iter])
+        let vals = []
+        iterNext:
+        for(;true;){
+            let idx = frame.length-1
+            let [iter] = frame[idx]
+            let {value:res, done} = iter.next()
+            if(done){
+                let fact1 = facts[idx]
+                if(fact1 == cut) {
+                    throw cut
+                }
+                frame.pop()
+                if(frame.length == 0) return
+                continue iterNext
+            } else { 
+                let [st, val] = res
+                vals[idx] = val
+                flush:
+                for(let i = idx+1; i<=lastIdx; ++i){
+                    let fact1 = facts[i]
+                    let iter = query(fact1, st)
+                    let {value:res, done} = iter.next()
+                    if(done){
+                        continue iterNext
+                    } else {
+                        frame.push([iter])
+                        st = res[0]
+                        val = res[1]
+                        vals[i] = val
+                        continue flush
+                    }
+                }
+                if(fact.combinator){
+                    yield [st, fact.combinator(...vals)]
+                } else {
+                    yield [st, vals]
+                }
             }
         }
     } else if(fact instanceof IFactNot){
@@ -235,6 +269,5 @@ let until = (skipFact, untilFact)=> {
     }
     return f2
 }
-
 
 module.exports = {zero_one, many, many_one, any, all, not, until, err, argument, cut, query:queryException}
