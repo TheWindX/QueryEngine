@@ -1,6 +1,8 @@
 let assert = require('assert')
 const q = require('../src/query.js')
-let util = require('util')
+let util = require('../src/util')
+let data = require('./data.js')
+
 let inspect = (x)=>{
     let r = util.inspect(x, true, 20)
     console.log(r)
@@ -143,6 +145,10 @@ assert.equal(test, 1);test = 0
 let p7 = q.query((new Parser('12345678alskdjfasdf333839999,8888a')).testCut(), 0)
 assert.deepStrictEqual(p7.next().value, [28, ['1234', '9999']])
 assert.deepStrictEqual(p7.next().value, [28, ['12345', '9999']])
+
+let p8 = q.query((new Parser(data.data)).testMany('asdf'), 0)
+inspect(p8.next())
+
 
 
 console.log('pass all test')
