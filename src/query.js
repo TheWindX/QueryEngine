@@ -14,8 +14,8 @@ class IFactCut extends IFact {}
 const ok = new IFactAtom()
 ok.run = (st)=>[st, []]
 
-const err = new IFactAtom()
-err.run = (st)=> null
+const fail = new IFactAtom()
+fail.run = (st)=> null
 
 const cut = new IFactCut()
 
@@ -134,6 +134,42 @@ function* queryException(fact, st){
     }
 }
 
+
+function* query1(fact, st) {
+    if(!(fact instanceof IFact)){
+        assert.fail(util.inspect(fact))
+    }
+    let iterStk = [] //[fact, idx, ]
+    let f = fact
+    let idx = -1
+
+    // fact iter
+    for(;true;){
+        if(f instanceof IFactAtom){
+            let st1 = f.run(st)
+            if(st1 != null) yield st1
+        } else if(f instanceof IFactAny){
+            // no found
+            if(idx == f.facts.length){
+                if(iterStk.length == 0) return
+                else {
+                    [f, idx] = iterStk
+                    if(f)
+                    idx--
+                    continue
+                }
+            }
+            let subF = f.facts[idx]
+            if(subF instanceof IFactAtom) {
+                let st1 = f.run(st)
+                if(st != null) yield st
+            } else {
+                iterStk.push([subF, idx])
+            }
+        }
+    }
+}
+
 function* query(fact, st){
     if(!(fact instanceof IFact)){
         assert.fail(util.inspect(fact))
@@ -150,51 +186,60 @@ function* query(fact, st){
             }
         }
     } else if(fact instanceof IFactAll){
-        let frame = []
-        let facts = fact.facts
-        let lastIdx = facts.length-1
-        fact1 = facts[0]
-        let iter = query(fact1, st)
-        frame.push([iter])
-        let vals = []
-        iterNext:
-        for(;true;){
-            let idx = frame.length-1
-            let [iter] = frame[idx]
-            let {value:res, done} = iter.next()
-            if(done){
-                let fact1 = facts[idx]
-                if(fact1 == cut) {
-                    throw cut
-                }
-                frame.pop()
-                if(frame.length == 0) return
-                continue iterNext
-            } else { 
-                let [st, val] = res
-                vals[idx] = val
-                flush:
-                for(let i = idx+1; i<=lastIdx; ++i){
-                    let fact1 = facts[i]
-                    let iter = query(fact1, st)
-                    let {value:res, done} = iter.next()
-                    if(done){
-                        continue iterNext
+        try{
+            let frame = []
+            let facts = fact.facts
+            let lastIdx = facts.length-1
+            fact1 = facts[0]
+            let iter = query(fact1, st)
+            frame.push([iter])
+            let vals = []
+            iterNext:
+            for(;true;){
+                let idx = frame.length-1
+                let [iter] = frame[idx]
+                let {value:res, done} = iter.next()
+                if(done){
+                    let fact1 = facts[idx]
+                    if(fact1 == cut) {
+                        throw cut
+                    }
+                    frame.pop()
+                    if(frame.length == 0) return
+                    continue iterNext
+                } else { 
+                    let [st, val] = res
+                    vals[idx] = val
+                    flush:
+                    for(let i = idx+1; i<=lastIdx; ++i){
+                        let fact1 = facts[i]
+                        let iter = query(fact1, st)
+                        let {value:res, done} = iter.next()
+                        if(done){
+                            continue iterNext
+                        } else {
+                            frame.push([iter])
+                            st = res[0]
+                            val = res[1]
+                            vals[i] = val
+                            continue flush
+                        }
+                    }
+                    if(fact.combinator){
+                        yield [st, fact.combinator(...vals)]
                     } else {
-                        frame.push([iter])
-                        st = res[0]
-                        val = res[1]
-                        vals[i] = val
-                        continue flush
+                        yield [st, vals]
                     }
                 }
-                if(fact.combinator){
-                    yield [st, fact.combinator(...vals)]
-                } else {
-                    yield [st, vals]
-                }
+            }
+        } catch(ex) {
+            if(ex == cut){
+                return
+            } else {
+                throw ex
             }
         }
+        
     } else if(fact instanceof IFactNot){
         let ress = query(fact.fact, st)
         let notFound = true
@@ -270,4 +315,4 @@ let until = (skipFact, untilFact)=> {
     return f2
 }
 
-module.exports = {zero_one, many, many_one, any, all, not, until, err, argument, cut, query:queryException}
+module.exports = {zero_one, many, many_one, any, all, not, until, fail, cut, argument, query}

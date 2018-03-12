@@ -1,11 +1,10 @@
 let assert = require('assert')
-const q = require('../src/query.js')
+const q = require('../src/query2.js')
 let util = require('../src/util')
 let data = require('./data.js')
 
 let inspect = (x)=>{
     let r = util.inspect(x, true, 20)
-    console.log(r)
     return r
 }
 
@@ -57,7 +56,16 @@ class Parser {
             if(idx == this.src.length) return null
             return [idx+1, []]
         })
-        let f1 = q.all(this.testAny("1234", "12345"), q.until(skip, this.testAny('9999', "8888")))
+        let f1 = q.all(this.testAny("1234", "12345"), q.cut, q.until(skip, this.testAny('9999', "8888")))
+        return f1
+    }
+
+    testCut1(){
+        let skip = q.argument((idx)=>{
+            if(idx == this.src.length) return null
+            return [idx+1, []]
+        })
+        let f1 = q.all(this.testAny("1234", "12345"), this.testAny('999', "5999"))
         return f1
     }
 }
@@ -65,7 +73,7 @@ class Parser {
 let test = 0
 let p1 = q.query((new Parser('asdfasdfasdfasdf')).testWord('asdf'), 0)
 for(let i of p1){
-    assert(JSON.stringify(i) == JSON.stringify([4, 'asdf']), "word compare is failed")
+    assert.deepStrictEqual(i, [4, 'asdf'])
     test++
     break
 }
@@ -75,6 +83,15 @@ assert.equal(test, 1);test = 0
 let p2 = q.query((new Parser('asdfasdfasdfasdf')).testAny('abcd','asdfas'), 0)
 for(let i of p2){
     assert.deepStrictEqual(i, [6, 'asdfas'])
+    test++
+    break
+}
+assert.equal(test, 1);test = 0
+
+let ps = new Parser('asdf');
+let p22 = q.query(q.any(ps.testWord('asdf'), q.ok), 0)
+for(let i of p22){
+    assert.deepStrictEqual(i, [4, 'asdf'])
     test++
     break
 }
@@ -118,6 +135,8 @@ for(let i of p41){
 }
 assert.equal(test, 1);test = 0
 
+
+
 let p5 = q.query((new Parser('abcdabcd')).testManyOne('abcd'), 0)
 for(let i of p5){
     assert.deepStrictEqual(i, [8, ['abcd','abcd']])
@@ -143,11 +162,16 @@ for(let i of p6){
 assert.equal(test, 1);test = 0
 
 let p7 = q.query((new Parser('12345678alskdjfasdf333839999,8888a')).testCut(), 0)
-assert.deepStrictEqual(p7.next().value, [28, ['1234', '9999']])
-assert.deepStrictEqual(p7.next().value, [28, ['12345', '9999']])
+assert.deepStrictEqual(p7.next().value, [28, ['1234', null, '9999']])
+assert.deepStrictEqual(p7.next().value, undefined)
+
+let p71 = q.query((new Parser('12345999')).testCut1(), 0)
+for(let i of p71){
+    inspect(i)
+}
 
 let p8 = q.query((new Parser(data.data)).testMany('asdf'), 0)
-inspect(p8.next())
+assert.equal(p8.next().value[1].length, 1835)
 
 
 
