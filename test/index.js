@@ -65,8 +65,10 @@ class Parser {
             if(idx == this.src.length) return null
             return [idx+1, []]
         })
-        let f1 = q.all(this.testAny("1234", "12345"), this.testAny('999', "5999"))
-        return f1
+        let f1 = q.all(q.cut, this.testAny("1234", "12345"), this.testAny('999', "5999") )
+        let f2 = q.all(this.testAny("1234", "12345"), q.cut, this.testAny('999', "5999") )
+        let f3 = q.all(this.testAny("1234", "12345"), this.testAny('999', "5999"), q.cut )
+        return [q.query(f1, 0), q.query(f2, 0), q.query(f3, 0)]
     }
 }
 
@@ -165,14 +167,12 @@ let p7 = q.query((new Parser('12345678alskdjfasdf333839999,8888a')).testCut(), 0
 assert.deepStrictEqual(p7.next().value, [28, ['1234', null, '9999']])
 assert.deepStrictEqual(p7.next().value, undefined)
 
-let p71 = q.query((new Parser('12345999')).testCut1(), 0)
-for(let i of p71){
-    inspect(i)
-}
+let [p71, p72, p73] = new Parser('12345999').testCut1()
+assert.deepStrictEqual(Array.from(p71), [[8, [null, "1234", "5999"]], [8, [null, "12345", "999"]]])
+assert.deepStrictEqual(Array.from(p72), [[8, ["1234", null, "5999"]]] )
+assert.deepStrictEqual(Array.from(p73), [[8, ["1234", "5999", null]]] )
 
-let p8 = q.query((new Parser(data.data)).testMany('asdf'), 0)
-assert.equal(p8.next().value[1].length, 1835)
-
-
+// let p8 = q.query((new Parser(data.data)).testMany('asdf'), 0)
+// assert.equal(p8.next().value[1].length, 1835)
 
 console.log('pass all test')
