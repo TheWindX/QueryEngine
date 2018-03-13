@@ -3,6 +3,7 @@ const q = require('../src/query.js')
 let util = require('../src/util')
 let data = require('./data.js')
 
+
 let inspect = (x)=>{
     let r = util.inspect(x, true, 20)
     return r
@@ -15,16 +16,19 @@ class Parser {
     }
 
     testWord(n){
-        let query = q.argument((idx)=>this.src.startsWith(n, idx)?[idx+n.length, n]:null)
+        if(!n){
+            let i = 0
+        }
+        let query = q.argument((idx)=>this.src.startsWith(n, idx)?[idx+n.length, n]:null, `'${n}'`)
         return query
     }
 
-    testAny(a, b){
-        return q.any(this.testWord(a), this.testWord(b))
+    testAny(...ws){
+        return q.any(...ws.map(w=>this.testWord(w)))
     }
 
-    testAll(a, b){
-        return q.all(this.testWord(a), this.testWord(b))
+    testAll(...ws){
+        return q.all(...ws.map(w=>this.testWord(w)))
     }
 
     testNot(a){
@@ -47,7 +51,7 @@ class Parser {
         let skip = q.argument((idx)=>{
             if(idx == this.src.length) return null
             return [idx+1, []]
-        })
+        }, 'skip')
         return q.until(skip, this.testWord(a))
     }
 
@@ -55,7 +59,7 @@ class Parser {
         let skip = q.argument((idx)=>{
             if(idx == this.src.length) return null
             return [idx+1, []]
-        })
+        }, 'skip')
         let f1 = q.all(this.testAny("1234", "12345"), q.cut, q.until(skip, this.testAny('9999', "8888")))
         return f1
     }
@@ -64,7 +68,7 @@ class Parser {
         let skip = q.argument((idx)=>{
             if(idx == this.src.length) return null
             return [idx+1, []]
-        })
+        }, 'skip')
         let f1 = q.all(q.cut, this.testAny("1234", "12345"), this.testAny('999', "5999") )
         let f2 = q.all(this.testAny("1234", "12345"), q.cut, this.testAny('999', "5999") )
         let f3 = q.all(this.testAny("1234", "12345"), this.testAny('999', "5999"), q.cut )
@@ -100,6 +104,7 @@ for(let i of p22){
 assert.equal(test, 1);test = 0
 
 p2 = q.query((new Parser('abcdasdfasdfasdfasdf')).testNot('abcd'), 0)
+
 for(let i of p2){
     test++
     break
@@ -121,6 +126,18 @@ for(let i of p3){
     break
 }
 assert.equal(test, 1);test = 0
+
+
+q.debug(true)
+let p31 = q.query((new Parser('asdfasdf')).testAny('asdf'), 0)
+for(let i of p31){
+    inspect(i)
+    assert.deepStrictEqual(i, [4, 'asdf'])
+    test++
+    break
+}
+assert.equal(test, 1);test = 0
+q.debug(false)
 
 let p4 = q.query((new Parser('')).testManyOne('asdf'), 0)
 for(let i of p4){

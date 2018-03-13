@@ -21,7 +21,7 @@ class Parser_test extends PaserBase{
         q.many(this.noblank(), this.blank())
         this.until(this.noblank())
         //r = q.query(q.all(this.until(this.noblank()), q.many(q.all(this.noblank(), this.blank(), q.cut)), 0)) //, this.blank), 0)
-        r = q.query(q.many(this.noblank()), 0) //, this.blank), 0)
+        r = q.query(q.many(this.noblank()), 0 ) //, this.blank), 0)
         util.inspect(r.next().value)
     }
 }

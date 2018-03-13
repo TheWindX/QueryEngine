@@ -10,9 +10,12 @@ class PaserBase {
                 }
                 if(i>idx) return [i, this.src.slice(idx, i)]
                 return null
-            })
+            }, 'blank')
         this.word = (w)=>{
-            return q.argument((idx)=>this.src.startsWith(w, idx)?[idx+w.length, w]:null)
+            if(!w){
+                let i = 0
+            }
+            return q.argument((idx)=>this.src.startsWith(w, idx)?[idx+w.length, w]:null, `'${w}'`)
         }
         this.regex = (r)=>{
             return q.argument((idx)=>{
@@ -22,7 +25,7 @@ class PaserBase {
                     return [m.index+str.length, str]
                 }
                 return null            
-            })
+            }, r.toString())
         }
         this.until = (rule, include=false)=>{
             return q.argument(idx=>{
@@ -39,14 +42,14 @@ class PaserBase {
                     }
                 }
                 return null
-            })
+            }, `until(${rule.toString()}`)
         }
         this.endl = ()=>this.regex(/^\r?\n/)
         this.line = ()=>this.until(this.endl, true)
         this.line.transform = ([before, end])=>{
             return before
         }
-        this.tillEnd = ()=>q.argument((idx)=>[this.src.length, this.src.slice(idx)])
+        this.tillEnd = ()=>q.argument((idx)=>[this.src.length, this.src.slice(idx)], 'tillEnd')
         this.lines = ()=>q.all(q.many(this.line()), this.tillEnd())
         this.noblank = ()=> {
             let f = this.until(this.blank(), false)

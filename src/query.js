@@ -1,9 +1,36 @@
 const assert = require('assert')
 const util = require('./util')
 
+
+let debug = false
+let idC = 0
 class IFact {
+    constructor(){
+        this.id = idC++
+        this._name = "noname"
+    }
+
+    name() {
+        return this._name
+    }
+
+    setName(n) {
+        this._name = n
+    }
+
     getIter(st) {
         return new IFactIter(this, st)
+    }
+
+    toString() {
+        if(this.rec_test) {
+            this.rec_test = false
+            return 'rec'
+        }
+        this.rec_test = true
+        let r = this.name()
+        this.rec_test = false
+        return r
     }
 }
 
@@ -39,6 +66,11 @@ class IFactAtomIter extends IFactIter {
 }
 
 class IFactAtom extends IFact {
+    constructor(){
+        super()
+        this._name = 'atom'
+    }
+
     run(st) {
         return [st, null]
     }
@@ -48,20 +80,18 @@ class IFactAtom extends IFact {
     }
 }
 
-const argument = (judge) => {
+const argument = (judge, name) => {
     let f = new IFactAtom()
     f.run = judge
+    f.setName(name?name:'<argument>')
     return f
 }
 
-const cut = argument((st) => [st, null])
+const ok = argument((st) => [st, []], 'ok')
 
-const ok = new IFactAtom()
-ok.run = (st) => [st, []
-]
+const fail = argument((st) => null, 'fail')
 
-const fail = new IFactAtom()
-fail.run = (st) => null
+const cut = argument((st) => [st, null], 'cut')
 
 class IFactAnyIter extends IFactIter {
     constructor(fact, st) {
@@ -98,6 +128,10 @@ class IFactAny extends IFact {
     constructor(facts = []) {
         super()
         this.facts = facts
+    }
+
+    name() {
+        return `any(${this.facts.map(f=>f.toString()).join(',')})`
     }
 
     push(f) {
@@ -168,6 +202,10 @@ class IFactAll extends IFact {
         this.facts = facts
     }
 
+    name() {
+        return `all(${this.facts.map(f=>f.toString()).join(',')})`
+    }
+
     push(f) {
         this
             .facts
@@ -177,44 +215,6 @@ class IFactAll extends IFact {
 
     getIter(st) {
         return new IFactAllIter(this, st)
-    }
-}
-
-function * query(fact, st) {
-    if (!(fact instanceof IFact)) {
-        assert.fail(util.inspect(fact))
-    }
-
-    let iterStk = []
-    let iter = fact.getIter(st)
-
-    for (; true;) {
-        let r = iter.next()
-        if (r instanceof IFactIter) {
-            iterStk.push(iter)
-            iter = r
-            continue
-        } else {
-            if (iterStk.length != 0) {
-                let serverIter = iter
-                iter = iterStk.pop()
-                if(r && serverIter.fact.transform){
-                    let v = serverIter.fact.transform(r[1])
-                    iter.gain([r[0], v])
-                } else {
-                    iter.gain(r)
-                }
-            } else {
-                if (r){
-                    if(fact.transform){
-                        yield [r[0], fact.transform(r[1])]
-                    }
-                    yield r
-                }
-                else 
-                    return
-            }
-        }
     }
 }
 
@@ -253,8 +253,62 @@ class IFactNot extends IFact {
         this.fact = fact
     }
 
+    name() {
+        return `not(${this.fact.toString()})`
+    }
+
     getIter(st) {
         return new IFactNotIter(this, st)
+    }
+}
+
+function * query(fact, st, isRec=(st, st1)=>st == st1) {
+    let factID2St = new Map()
+    factID2St.set(fact.id, st)
+    let iterStk = []
+    let iter = fact.getIter(st)
+
+    for (; true;) {
+        let r = iter.next()
+        if (r instanceof IFactIter) {
+            let st1 = factID2St.get(r.fact.id)
+            let bRec = isRec(r.st, st1)
+            if(bRec) {
+                iter.gain(null)
+            } else {
+                factID2St.set(r.fact.id, r.st)
+                iterStk.push(iter)
+                iter = r
+
+                if(debug) {
+                    console.log('--------')
+                    let strStk = iterStk.map(iter=>iter.fact.toString()).join('\n')
+                    console.log(strStk)
+                }
+            }
+            continue
+        } else {
+            if (iterStk.length != 0) {
+                let serverIter = iter
+                factID2St.delete(serverIter.fact.id)
+                iter = iterStk.pop()
+                if(r && serverIter.fact.transform){
+                    let v = serverIter.fact.transform(r[1])
+                    iter.gain([r[0], v])
+                } else {
+                    iter.gain(r)
+                }
+            } else {
+                if (r){
+                    if(fact.transform){
+                        yield [r[0], fact.transform(r[1])]
+                    }
+                    yield r
+                }
+                else
+                    return
+            }
+        }
     }
 }
 
@@ -327,5 +381,6 @@ module.exports = {
     argument,
     ok,
     fail,
-    query
+    query,
+    debug:(dbg)=>debug = dbg
 }
