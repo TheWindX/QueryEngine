@@ -30,9 +30,7 @@ class PaserBase {
         this.until = (rule, include=false)=>{
             return q.argument(idx=>{
                 for(let i = idx; i<this.src.length; ++i) {
-                    //console.log(i)
                     let res = q.query(rule, i).next()
-                    //console.log(res)
                     if(!res.done){
                         if(include){
                             let ruleLen = res.value[0]
@@ -54,7 +52,9 @@ class PaserBase {
         this.noblank = ()=> {
             let f = this.until(this.blank(), false)
             f.transform = ([nb, b])=>nb
-            return f
+            let f1 = q.any(f, this.tillEnd())
+            //f1.transform = (nb, te)=>v == null?"":v
+            return f1
         }
     }
 }

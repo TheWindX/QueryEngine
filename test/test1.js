@@ -128,16 +128,22 @@ for(let i of p3){
 assert.equal(test, 1);test = 0
 
 
-q.debug(true)
-let p31 = q.query((new Parser('asdfasdf')).testAny('asdf'), 0)
+let p31 = q.query((new Parser('asdfasdf')).testZeroOne('asdf'), 0)
 for(let i of p31){
-    inspect(i)
     assert.deepStrictEqual(i, [4, 'asdf'])
     test++
     break
 }
 assert.equal(test, 1);test = 0
-q.debug(false)
+
+let p32 = q.query((new Parser('')).testZeroOne('asdf'), 0)
+for(let i of p32){
+    assert.deepStrictEqual(i, [0, null])
+    test++
+    break
+}
+assert.equal(test, 1);test = 0
+
 
 let p4 = q.query((new Parser('')).testManyOne('asdf'), 0)
 for(let i of p4){
@@ -153,8 +159,6 @@ for(let i of p41){
     break
 }
 assert.equal(test, 1);test = 0
-
-
 
 let p5 = q.query((new Parser('abcdabcd')).testManyOne('abcd'), 0)
 for(let i of p5){
@@ -192,4 +196,4 @@ assert.deepStrictEqual(Array.from(p73), [[8, ["1234", "5999", null]]] )
 // let p8 = q.query((new Parser(data.data)).testMany('asdf'), 0)
 // assert.equal(p8.next().value[1].length, 1835)
 
-console.log('pass test 1')
+console.log('----------------------------------------------pass test 1')

@@ -87,7 +87,7 @@ const argument = (judge, name) => {
     return f
 }
 
-const ok = argument((st) => [st, []], 'ok')
+const ok = argument((st) => [st, null], 'ok')
 
 const fail = argument((st) => null, 'fail')
 
@@ -106,6 +106,10 @@ class IFactAnyIter extends IFactIter {
             if (++this.idx == this.fact.facts.length) {
                 return null
             } else {
+                if(debug) {
+                    console.log('------------any fail')
+                    console.log(this.fact.facts[this.idx].toString())
+                }
                 this.iter = this
                     .fact
                     .facts[this.idx]
@@ -113,6 +117,10 @@ class IFactAnyIter extends IFactIter {
                 return this.iter
             }
         } else {
+            if(debug) {
+                console.log('------------any ok')
+                console.log( `${this.fact.facts[this.idx]}: ${this.stVal}`)
+            }
             let r = this.stVal
             this.stVal = null
             return r
@@ -274,6 +282,7 @@ function * query(fact, st, isRec=(st, st1)=>st == st1) {
             let st1 = factID2St.get(r.fact.id)
             let bRec = isRec(r.st, st1)
             if(bRec) {
+                console.log('left recursive')
                 iter.gain(null)
             } else {
                 factID2St.set(r.fact.id, r.st)
@@ -288,6 +297,11 @@ function * query(fact, st, isRec=(st, st1)=>st == st1) {
             }
             continue
         } else {
+            if(debug) {
+                console.log('--------')
+                let strStk = iterStk.map(iter=>iter.fact.toString()).join('\n')
+                console.log(strStk)
+            }
             if (iterStk.length != 0) {
                 let serverIter = iter
                 factID2St.delete(serverIter.fact.id)
@@ -329,6 +343,12 @@ const not = (f) => {
 const many = (f) => {
     let f1 = all(f)
     let f2 = any(f1, ok)
+    f2.transform = (r)=>{
+        if(r == null){
+            return []
+        }
+        return r
+    }
     f1.push(f2)
     f1.transform = ([a, b]) => {
         if (b instanceof Array) {
