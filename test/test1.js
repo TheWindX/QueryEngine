@@ -1,5 +1,5 @@
 let assert = require('assert')
-const q = require('../src/query2.js')
+const q = require('../src/query.js')
 let util = require('../src/util')
 let data = require('./data.js')
 
@@ -175,4 +175,4 @@ assert.deepStrictEqual(Array.from(p73), [[8, ["1234", "5999", null]]] )
 // let p8 = q.query((new Parser(data.data)).testMany('asdf'), 0)
 // assert.equal(p8.next().value[1].length, 1835)
 
-console.log('pass all test of test1')
+console.log('pass test 1')
