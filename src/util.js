@@ -6,7 +6,7 @@ let callstack = ()=> {
 }
 
 let inspect = (x)=>{
-    console.log(util.inspect(x))
+    console.log(util.inspect(x, false, 5))
 }
 
 module.exports = {callstack, inspect}

@@ -144,19 +144,7 @@ class IFactAllIter extends IFactIter {
                     this.iters[this.idx] = iter
                     return iter
                 } else {
-                    if (this.fact.combinator) {
-                        return [
-                            st,
-                            this
-                                .fact
-                                .combinator(...this.values)
-                        ]
-                    } else {
-                        return [
-                            st,
-                            [...this.values]
-                        ]
-                    }
+                    return [st, [...this.values]]
                 }
             }
             this.idx--
@@ -175,10 +163,9 @@ class IFactAllIter extends IFactIter {
 }
 
 class IFactAll extends IFact {
-    constructor(facts = [], combinator = null) {
+    constructor(facts = []) {
         super()
         this.facts = facts
-        this.combinator = combinator
     }
 
     push(f) {
@@ -209,11 +196,21 @@ function * query(fact, st) {
             continue
         } else {
             if (iterStk.length != 0) {
+                let serverIter = iter
                 iter = iterStk.pop()
-                iter.gain(r)
+                if(r && serverIter.fact.transform){
+                    let v = serverIter.fact.transform(r[1])
+                    iter.gain([r[0], v])
+                } else {
+                    iter.gain(r)
+                }
             } else {
-                if (r) 
+                if (r){
+                    if(fact.transform){
+                        yield [r[0], fact.transform(r[1])]
+                    }
                     yield r
+                }
                 else 
                     return
             }
@@ -251,7 +248,7 @@ class IFactNotIter extends IFactIter {
 }
 
 class IFactNot extends IFact {
-    constructor(fact, combinator = null) {
+    constructor(fact) {
         super()
         this.fact = fact
     }
@@ -279,7 +276,7 @@ const many = (f) => {
     let f1 = all(f)
     let f2 = any(f1, ok)
     f1.push(f2)
-    f1.combinator = (a, b) => {
+    f1.transform = ([a, b]) => {
         if (b instanceof Array) {
             b.unshift(a)
             return b
@@ -293,7 +290,7 @@ const many = (f) => {
 const many_one = (f) => {
     let f1 = many(f)
     let f2 = all(f)
-    f2.combinator = (a, b) => {
+    f2.transform = ([a, b]) => {
         if (b instanceof Array) {
             b.unshift(a)
             return b
@@ -312,7 +309,7 @@ const zero_one = (f) => {
 const until = (skipFact, untilFact) => {
     let f1 = many(all(not(untilFact), skipFact))
     let f2 = all(f1, untilFact)
-    f2.combinator = (a, b) => {
+    f2.transform = ([a, b]) => {
         return b
     }
     return f2
