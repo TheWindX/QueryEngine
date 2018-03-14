@@ -216,6 +216,8 @@ class IFactAnyIter extends IFactIter {
 
 class IFactAny extends IFact {
     constructor(facts = []) {
+        facts.forEach(f=>{if(!f instanceof IFact) throw new Error(`any construct of ${f}`)})
+        
         super()
         this.facts = facts
     }
@@ -228,6 +230,7 @@ class IFactAny extends IFact {
     }
 
     push(f) {
+        if(!f instanceof IFact) throw new Error(`any push of ${f}`);
         this
             .facts
             .push(f)
@@ -300,6 +303,7 @@ class IFactAllIter extends IFactIter {
 
 class IFactAll extends IFact {
     constructor(facts = []) {
+        facts.forEach(f=>{if(!f instanceof IFact) throw new Error(`all construct of ${f}`)})
         super()
         this.facts = facts
     }
@@ -312,6 +316,7 @@ class IFactAll extends IFact {
     }
 
     push(f) {
+        if(!f instanceof IFact) throw new Error(`all push of ${f}`)
         this
             .facts
             .push(f)
@@ -343,8 +348,8 @@ class IFactNotIter extends IFactIter {
             if (this.stVal) {
                 return null
             } else {
-                return [this.st, []
-                ]
+                this.stVal = true // bug fix / to quit //dirty //TODO
+                return [this.st, null]
             }
         }
     }
@@ -374,6 +379,7 @@ class IFactNot extends IFact {
 function * query(fact, st, isRec = (st, st1) => st == st1) {
     try {
         if(st === undefined || st === null) throw new Error('query without param of "state"')
+        if(fact === undefined || fact === null) throw new Error('query without param of "fact"')
         let factID2St = new FactID2St()
         factID2St.set(fact.id, st)
         let iterStk = []
@@ -507,21 +513,14 @@ const zero_one = (f) => {
     return any(f, ok)
 }
 
-// const until = (skipFact, untilFact) => {
-//     let f1 = many(all(not(untilFact), skipFact))
-//     let f2 = all(f1, untilFact)
-//     f2.transform = ([a, b]) => {
-//         return b
-//     }
-//     return f2
-// }
 
-const until = (skipFact, untilFact) => {
-    let f = many(all(not(untilFact), skipFact))
-    f.transform = (v) => {
-        return null
+const until = (stepFact, untilFact) => {
+    let f = many(all(not(untilFact), stepFact))
+    let f1 = all(f, untilFact)
+    f1.transform = v => {
+        return v[1]
     }
-    return f
+    return f1
 }
 
 module.exports = {

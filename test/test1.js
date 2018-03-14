@@ -31,8 +31,15 @@ class Parser {
         return q.all(...ws.map(w=>this.testWord(w)))
     }
 
-    testNot(a){
-        return q.not(this.testWord(a))
+    testNot(){
+        this.src = 'abcde'
+        let iters = q.query(q.not(this.testWord('b')), 0)
+        assert.deepStrictEqual(iters.next().value, [0, null])
+
+        let nb = q.not(this.testWord('b') )
+        let f = q.fail
+        iters = q.query(q.all(nb, f), 0)
+        assert.deepStrictEqual(iters.next().value, undefined)
     }
 
     testMany(a){
@@ -49,10 +56,15 @@ class Parser {
 
     testUtil(a){
         let skip = q.argument((idx)=>{
-            if(idx == this.src.length) return null
+            if(idx+1>=this.src.length) return null
             return [idx+1, null]
         }, 'skip')
-        return q.until(skip, this.testWord(a))
+
+        let end = q.argument((idx)=>{
+            if(idx>=this.src.length) return null
+            return [idx, null]
+        })
+        return q.until(skip, this.testWord(a), end)
     }
 
     testCut(){
@@ -103,21 +115,7 @@ for(let i of p22){
 }
 assert.equal(test, 1);test = 0
 
-p2 = q.query((new Parser('abcdasdfasdfasdfasdf')).testNot('abcd'), 0)
-
-for(let i of p2){
-    test++
-    break
-}
-assert(test == 0);test = 0
-
-p2 = q.query((new Parser('abcdabcdasdfasdfasdfasdf')).testNot('abcd1'), 4)
-for(let i of p2){
-    assert.deepStrictEqual(i, [4, []])
-    test++
-    break
-}
-assert.equal(test, 1);test = 0
+ps.testNot()
 
 let p3 = q.query((new Parser('asdfasdfasdfasdf')).testAll('asdfas','dfas'), 0)
 for(let i of p3){
@@ -177,11 +175,15 @@ for(let i of p51){
 assert.equal(test, 1);test = 0
 
 let p6 = q.query((new Parser('abcdasdfasdf')).testUtil('asdf'), 0)
-assert.deepStrictEqual(p6.next().value, [4, null])
+assert.deepStrictEqual(p6.next().value, [8, 'asdf'])
+
+
+let p61 = q.query((new Parser('assss')).testUtil('1234'), 0)
+assert.deepStrictEqual(p61.next().value, undefined)
 
 
 let p7 = q.query((new Parser('12345678alskdjfasdf333839999,8888a')).testCut(), 0)
-assert.deepStrictEqual(p7.next().value, [24, ['1234', null, null]])
+assert.deepStrictEqual(p7.next().value, [28, ['1234', '9999', null]])
 assert.deepStrictEqual(p7.next().value, undefined)
 
 let [p71, p72, p73] = new Parser('12345999').testCut1()

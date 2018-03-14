@@ -66,11 +66,11 @@ class PythonInfo extends ParserBase {
     }
 
     pyMultiComment() {
-        //this.
+        return q.all(this.word(`"""`), this.untilStep(this.word(`"""`)), this.word(`"""`))
     }
 
     pyImport() {
-
+        //import x as, x, as
     }
 
     pyFromImport() {

@@ -12,6 +12,7 @@ class Parser_test extends PaserBase{
     }
 
     run() {
+        let q = this.q
         let f = q.all(this.noblank(), this.blank(), q.cut)
         f.transform = ([w, b, n]) => w
         let f1 = q.many(f)
@@ -38,7 +39,7 @@ class Parser_test extends PaserBase{
         this.src = "    a12asdfasdfasdf112341234"
         iters = this.q.query(this.untilStep(this.word('12')), 0)
         for(let i of iters){
-            assert.deepStrictEqual(i, [5, "    a"])
+            assert.deepStrictEqual(i, [7, "12"])
             c++
             break
         }
@@ -46,7 +47,7 @@ class Parser_test extends PaserBase{
 
         iters = this.q.query(this.untilStep(this.word('41234')), 0)
         for(let i of iters){
-            assert.deepStrictEqual(i, [23, '    a12asdfasdfasdf1123'])
+            assert.deepStrictEqual(i, [28, '41234'])
             c++
             break
         }
@@ -57,7 +58,7 @@ class Parser_test extends PaserBase{
 asdf`;
         iters = this.q.query(this.line(), 0)
         for(let i of iters){
-            assert.deepStrictEqual(i[1], "")
+            assert.deepStrictEqual(i, [1,''])
             c++
             break
         }
