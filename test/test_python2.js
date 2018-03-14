@@ -38,6 +38,15 @@ class PythonInfo extends ParserBase {
         this.initState = {spaceLen, index, inComment}
     }
 
+    untilStep(rule) {
+        let step = this.q.argument(({spaceLen, index, inComment})=>[{spaceLen, index:index+1, inComment}, null])
+        let f1 = this.q.until(step, rule);
+        f1.transform = (vs, stFrom, stTo)=>{
+            return this.src.slice(stFrom, stTo)
+        }
+        return f1
+    }
+
     prefix() {
         let space = this.q.argument(({spaceLen, index, inComment})=>{
             let ch = this.src[index]
@@ -49,25 +58,53 @@ class PythonInfo extends ParserBase {
             }
             return null
         });
-
         let r = this.q.many(space)
-        r.transform = (sps)=>{
-            return sps.reduce((c, a)=>{
-                if(a == '\n') return 0
-                return c+1
-            }, 0)
+        r.transform = (v, stFrom, stTo)=>{
+            return stTo.spaceLen
         }
         return r
     }
 
+    pyMultiComment() {
+        //this.
+    }
+
+    pyImport() {
+
+    }
+
+    pyFromImport() {
+        
+    }
+
+    pyTillEnd() {
+        let notendl = ({spaceLen, index, inComment})=>{
+            if(a == '\n') return 0
+        }
+        this.q.many(this.q)
+    }
+
     run() {
+        this.src = `   
+        
+  `
         let iter = this.q.query(this.prefix(), this.initState)
         let v = iter.next()
-        util.inspect(v.value)
+        assert.deepStrictEqual(v.value, [ { spaceLen: 2, index: 15, inComment: false }, 2 ])
+
+        this.src = ""
+        iter = this.q.query(this.prefix(), this.initState)
+        v = iter.next()
+        assert.deepStrictEqual(v.value, [ { spaceLen: 0, index: 0, inComment: false }, 0 ])
+
+        this.src = ""
+        iter = this.q.query(this.prefix(), this.initState)
+        v = iter.next()
+        assert.deepStrictEqual(v.value, [ { spaceLen: 0, index: 0, inComment: false }, 0 ])
     }
 }
 
-let p = new PythonInfo(`    
-
-  asdf`);
+let p = new PythonInfo(``);
 p.run()
+
+console.log("----------------------------------------------pass test python2")

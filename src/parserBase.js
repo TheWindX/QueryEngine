@@ -23,39 +23,48 @@ class PaserBase {
                 let m = this.src.slice(idx).match(r)
                 if(m){
                     let str = m[0]
-                    return [m.index+str.length, str]
+                    return [idx+m.index+str.length, str] //[idx+m.index+str.length, str]
                 }
                 return null            
             }, r.toString())
         }
-        this.until = (rule, include=false)=>{
-            return q.argument(idx=>{
-                for(let i = idx; i<this.src.length; ++i) {
-                    let res = q.query(rule, i).next()
-                    if(!res.done){
-                        if(include){
-                            let ruleLen = res.value[0]
-                            return [i+ruleLen, [this.src.slice(idx, i), res.value[1]]]
-                        }
-                        return [i, [this.src.slice(idx, i), res.value[1]]]
-                    }
-                }
-                return null
-            }, `until(${rule.toString()}`)
+        // step 1 char to succ
+        let step = ()=>this.q.argument((idx)=>[idx+1, null], 'step')
+
+        // step 1 until match rule
+        this.untilStep = (rule)=>{
+            let r = this.q.until(step(), rule);
+            r.transform = (v, stFrom, stTo)=>{
+                return this.src.slice(stFrom, stTo);
+            }
+            return r
         }
-        this.endl = ()=>this.regex(/^\r?\n/)
-        this.line = ()=>this.until(this.endl, true)
-        this.line.transform = ([before, end])=>{
-            return before
+        
+
+        // match end of line
+        this.endl = ()=>{
+            let r = this.regex(/^\r?\n/)
+            let r1 = this.q.argument((st)=>st >= this.src.length?[st, null]:null)
+            return q.any(r, r1)
         }
+
+        // match to line
+        this.line = ()=>{
+            let r = this.q.all(this.untilStep(this.endl()), this.endl())
+            r.transform = ([nendl, endl])=>nendl
+            return r
+        }
+
+        //match to EOF
         this.tillEnd = ()=>q.argument((idx)=>[this.src.length, this.src.slice(idx)], 'tillEnd')
-        this.lines = ()=>q.all(q.many(this.line()), this.tillEnd())
+
+        //match all lines
+        this.lines = ()=>q.many(this.line());
+
+        //match no blank
         this.noblank = ()=> {
-            let f = this.until(this.blank(), false)
-            f.transform = ([nb, b])=>nb
-            let f1 = q.any(f, this.tillEnd())
-            //f1.transform = (nb, te)=>v == null?"":v
-            return f1
+            let r = this.untilStep(this.blank())
+            return r
         }
     }
 }
