@@ -3,6 +3,7 @@ const q = require('../src/query.js')
 class PaserBase {
     constructor(src) {
         this.src = src
+        this.q = q
         this.blank = ()=>q.argument((idx)=>{
                 let i = idx
                 for(; i<this.src.length; ++i){

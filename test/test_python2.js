@@ -1,8 +1,7 @@
 let assert = require('assert')
 let util = require('../src/util')
 
-let PaserBase = require('../src/parserBase')
-
+let ParserBase = require('../src/parserBase')
 
 class ImportInfoB {
     constructor(){
@@ -40,27 +39,35 @@ class PythonInfo extends ParserBase {
     }
 
     prefix() {
-        let space = q.argument(({spaceLen, index, inComment})=>{
+        let space = this.q.argument(({spaceLen, index, inComment})=>{
             let ch = this.src[index]
             if(ch == '\n'){
-                return [{spaceLen:0, index:index+1, inComment}, null]
+                return [{spaceLen:0, index:index+1, inComment}, ch]
             }
             if(/\s/.test(ch)){
-                return [{spaceLen:spaceLen+1, index:index+1, inComment}, null]
+                return [{spaceLen:spaceLen+1, index:index+1, inComment}, ch]
             }
             return null
         });
 
-        let r = q.many(space)
+        let r = this.q.many(space)
         r.transform = (sps)=>{
-            return sps.length
+            return sps.reduce((c, a)=>{
+                if(a == '\n') return 0
+                return c+1
+            }, 0)
         }
         return r
     }
 
     run() {
-        let iter = q.query(this.prefix(), this.initState)
-        util.inspect(iter.next().value)
+        let iter = this.q.query(this.prefix(), this.initState)
+        let v = iter.next()
+        util.inspect(v.value)
     }
 }
 
+let p = new PythonInfo(`    
+
+  asdf`);
+p.run()

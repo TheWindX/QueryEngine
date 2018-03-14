@@ -8,6 +8,23 @@ class IFact {
     constructor(){
         this.id = idC++
         this._name = "noname"
+        this._transform = null
+    }
+
+    get transform() {
+        return this._transform
+    }
+
+    set transform(t) {
+        let orinTransform = this._transform
+        if(orinTransform){
+            this._transform = v=>{
+                let v1 = orinTransform(v)
+                return t(v1)
+            } 
+        } else {
+            this._transform = t
+        }
     }
 
     name() {
@@ -358,7 +375,11 @@ const many = (f) => {
             return [a]
         }
     }
-    return f2
+    f3 = all(f2)
+    f3.transform = ([all])=>{
+        return all
+    }
+    return f3
 }
 
 const many_one = (f) => {
@@ -373,7 +394,11 @@ const many_one = (f) => {
         }
     }
     f2.push(f1)
-    return f2
+    f3 = all(f2)
+    f3.transform = ([all])=>{ //not to effect for f2 recursive tranform
+        return all
+    }
+    return f3
 }
 
 const zero_one = (f) => {
@@ -383,7 +408,7 @@ const zero_one = (f) => {
 const until = (skipFact, untilFact) => {
     let f1 = many(all(not(untilFact), skipFact))
     let f2 = all(f1, untilFact)
-    f2.transform = ([a, b]) => {
+    f2.transform = ([a, b]) => { //not to effect for f2 recursive tranform
         return b
     }
     return f2
