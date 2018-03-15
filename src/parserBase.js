@@ -3,7 +3,11 @@ const q = require('../src/query.js')
 
 class PaserBase {
     constructor(src) {
+        this.init()
         this.src = src
+    }
+    
+    init() {
         this.q = q
         this.blanks = ()=>q.argument((idx)=>{
                 let i = idx
@@ -38,6 +42,24 @@ class PaserBase {
             return [idx+1, null]
         }, 'step')
 
+        this.step = step()
+        this.notStep = (rule)=>q.all(this.step, q.not(rule))
+
+        this.eq = (val)=>this.q.argument((idx)=>{
+            if(this.src[idx] === val){
+                return [idx+1, val]
+            }
+            return null
+        });
+
+        this.predict = (f, follow) => {
+            let f1 = q.all(f, q.tryof(follow))
+            f1.transform = (v)=>{
+                return v[0]
+            }
+            return f1
+        }
+
         // step 1 until match rule
         this.untilStep = (rule)=>{
             let r = this.q.until(step(), rule);
@@ -47,7 +69,6 @@ class PaserBase {
             return r
         }
         
-
         // match end of line
         this.endl = ()=>{
             let r = this.regex(/^\r?\n/)
@@ -82,26 +103,6 @@ class PaserBase {
                 if(i>idx) return [i, this.src.slice(idx, i)]
                 return null
             })
-            //let r = this.untilStep(this.blank())
-            // r.transform = (v, from, to)=>{
-            //     console.log(`${v}, ${from}, ${to}`)
-            //     console.log(this.src.slice(from, to-(v?v.length:0)))
-            //     return this.src.slice(from, to-(v?v.length:0))
-            // }
-            return r
-        }
-
-        this.splitBy = (splitRule, rule)=>{
-            let blanks = this.blanks();
-            let r = q.all(blanks, rule, q.many(
-                q.all(
-                    blanks, splitRule, blanks, rule) ));
-            r.transform = (val)=>{
-                util.inspect(val)
-                let vs = val[2].map(m=>m[3]).unshift(val[1])
-                console.log(vs)
-                return vs.map(m=>m[3]).unshift(r)
-            };
             return r
         }
     }

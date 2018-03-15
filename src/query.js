@@ -8,13 +8,17 @@ let debugAny = false
 let debugAll = false
 let debugNot = false
 let debugOthers = true
-
+let debugTry = false
+let debugStkSize = 50
 let debug = {
     rec(b){
         debugRec = b
     },
     stk(b){
         debugStk = b
+    },
+    stkSize(sz){
+        debugStkSize = sz
     },
     any(b){
         debugAny = b
@@ -27,6 +31,9 @@ let debug = {
     },
     others(b){
         debugOthers = b
+    },
+    try(b){
+        debugTry = b
     }
 }
 
@@ -42,6 +49,13 @@ class FactID2St {
             console.log(`set k:${k}`, `v:${v}`)
         }
         this.map.set(k, v)
+        if(this.map.size > debugStkSize){ //TODO
+            // console.log('--------')
+            // this.map.values(iter => iter.fact.toString())
+            //     .join('\n')
+            // console.log(strStk)
+            throw new Error(`FactID2St size of ${this.map.size} is too large`)
+        }
     }
 
     get(k){
@@ -216,7 +230,7 @@ class IFactAnyIter extends IFactIter {
 
 class IFactAny extends IFact {
     constructor(facts = []) {
-        facts.forEach(f=>{if(!f instanceof IFact) throw new Error(`any construct of ${f}`)})
+        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`any construct of ${f}`)})
         
         super()
         this.facts = facts
@@ -229,11 +243,11 @@ class IFactAny extends IFact {
             .join(',')})`
     }
 
-    push(f) {
-        if(!f instanceof IFact) throw new Error(`any push of ${f}`);
+    push(...facts) {
+        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`any push of ${f}`)})
         this
             .facts
-            .push(f)
+            .push(...facts)
         return this
     }
 
@@ -303,7 +317,7 @@ class IFactAllIter extends IFactIter {
 
 class IFactAll extends IFact {
     constructor(facts = []) {
-        facts.forEach(f=>{if(!f instanceof IFact) throw new Error(`all construct of ${f}`)})
+        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`all construct of ${f}`)})
         super()
         this.facts = facts
     }
@@ -315,11 +329,11 @@ class IFactAll extends IFact {
             .join(',')})`
     }
 
-    push(f) {
-        if(!f instanceof IFact) throw new Error(`all push of ${f}`)
+    push(...facts) {
+        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`all push of ${f}`)})
         this
             .facts
-            .push(f)
+            .push(...facts)
         return this
     }
 
@@ -373,6 +387,55 @@ class IFactNot extends IFact {
 
     getIter(st) {
         return new IFactNotIter(this, st)
+    }
+}
+
+class IFactTryIter extends IFactIter {
+    constructor(fact, st){
+        super(fact, st)
+        this.iter = null
+        this.stVal = null
+    }
+
+    next() {
+        if (!this.iter) {
+            let fact = this.fact.fact
+            if (debugTry) {
+                if (!(fact instanceof IFact)) 
+                    throw `${sysUtil.inspect(fact)} is not fact`
+            }
+            this.iter = fact.getIter(this.st)
+            return this.iter
+        } else {
+            if (this.stVal) {
+                let [st, val] = this.stVal
+                this.stVal = null
+                return [this.st, val]
+            } else {
+                return null
+            }
+        }
+    }
+
+    gain(stVal) {
+        this.stVal = stVal
+    }
+}
+
+class IFactTry extends IFact { // we need it,  because not(not(f)) cannot carry value
+    constructor(fact) {
+        super()
+        this.fact = fact
+    }
+
+    name() {
+        return `try(${this
+            .fact
+            .toString()})`
+    }
+
+    getIter(st) {
+        return new IFactTryIter(this, st)
     }
 }
 
@@ -465,6 +528,10 @@ const not = (f) => {
     return new IFactNot(f)
 }
 
+const tryof = (f)=>{
+    return new IFactTry(f) //not(not(f)) cannot carry value
+}
+
 const many = (f) => {
     let f1 = all(f)
     let f2 = any(f1, ok)
@@ -513,7 +580,6 @@ const zero_one = (f) => {
     return any(f, ok)
 }
 
-
 const until = (stepFact, untilFact) => {
     let f = many(all(not(untilFact), stepFact))
     let f1 = all(f, untilFact)
@@ -523,6 +589,8 @@ const until = (stepFact, untilFact) => {
     return f1
 }
 
+
+
 module.exports = {
     zero_one,
     many,
@@ -530,6 +598,7 @@ module.exports = {
     any,
     all,
     not,
+    tryof,
     until,
     cut,
     argument,

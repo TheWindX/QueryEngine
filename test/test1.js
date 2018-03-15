@@ -42,6 +42,16 @@ class Parser {
         assert.deepStrictEqual(iters.next().value, undefined)
     }
 
+    testTry(){
+        this.src = "asdf"
+        let iters = q.query(q.tryof(this.testWord('a')), 0)
+        assert.deepStrictEqual(iters.next().value, [0,'a'])
+
+        this.src = "    asdf"
+        iters = q.query(q.tryof(this.testWord('asdf')), 4)
+        assert.deepStrictEqual(iters.next().value, [4,'asdf'])
+    }
+
     testMany(a){
         return q.many(this.testWord(a))
     }
@@ -116,6 +126,8 @@ for(let i of p22){
 assert.equal(test, 1);test = 0
 
 ps.testNot()
+
+ps.testTry()
 
 let p3 = q.query((new Parser('asdfasdfasdfasdf')).testAll('asdfas','dfas'), 0)
 for(let i of p3){
@@ -193,5 +205,4 @@ assert.deepStrictEqual(Array.from(p73), [[8, ["1234", "5999", null]]] )
 
 // let p8 = q.query((new Parser(data.data)).testMany('asdf'), 0)
 // assert.equal(p8.next().value[1].length, 1835)
-
 console.log('----------------------------------------------pass test 1')

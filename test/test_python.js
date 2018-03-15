@@ -13,10 +13,10 @@ class Parser_test extends PaserBase{
 
     run() {
         let q = this.q
-        let f = q.all(this.noblank(), this.blank(), q.cut)
+        let f = q.all(this.noblanks(), this.blanks(), q.cut)
         f.transform = ([w, b, n]) => w
         let f1 = q.many(f)
-        let f2 = q.all(f1, this.noblank())
+        let f2 = q.all(f1, this.noblanks())
         f2.transform = ([nbs, nb])=>{
             return [...nbs, nb]
         }
@@ -76,6 +76,16 @@ asdf`;
             break
         }
         assert.equal(c, 1);c = 0
+
+        // noblanks
+        this.src = "asdf  asdf1"
+        iters = this.q.query(this.noblanks(), 0)
+        assert.deepStrictEqual(iters.next().value, [4, "asdf"])
+
+        // predict
+        this.src = "asdf1234"
+        iters = this.q.query(this.predict(this.word('asdf'), this.word('1234')), 0)
+        assert.deepStrictEqual(iters.next().value, [4, "asdf"])
     }
 }
 
