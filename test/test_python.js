@@ -13,10 +13,18 @@ class Parser_test extends PaserBase{
 
     run() {
         let q = this.q
-        let f = q.all(this.noblanks(), this.blanks(), q.cut)
+        let w = this.word
+        let b = this.blanks()
+        let nb = this.noblanks()
+        let regex = this.regex
+        let follow = this.follow
+        let all = q.all
+        let any = q.any
+
+        let f = all(nb, b, q.cut)
         f.transform = ([w, b, n]) => w
         let f1 = q.many(f)
-        let f2 = q.all(f1, this.noblanks())
+        let f2 = all(f1, nb)
         f2.transform = ([nbs, nb])=>{
             return [...nbs, nb]
         }
@@ -27,38 +35,56 @@ class Parser_test extends PaserBase{
         let iters
         ///regex
         this.src = "    a23b"
-        iters = this.q.query(this.regex(/23/), 0)
+        iters = q.query(regex(/23/), 0)
         assert.deepStrictEqual(iters.next().value, [7, "23"])
 
         this.src = "  23    a23b"
-        iters = this.q.query(this.regex(/^23/), 2)
+        iters = q.query(regex(/^23/), 2)
         assert.deepStrictEqual(iters.next().value, [4, "23"])
         
 
-        ////untilStep
-        this.src = "    a12asdfasdfasdf112341234"
-        iters = this.q.query(this.untilStep(this.word('12')), 0)
-        for(let i of iters){
-            assert.deepStrictEqual(i, [7, "12"])
-            c++
-            break
-        }
-        assert.equal(c, 1);c = 0
+        ////until
+        // this.src = "    12  "
+        // iters = q.query(this.until(w('12')), 0)
+        // for(let i of iters){
+        //     assert.deepStrictEqual(i, [4, "    "])
+        //     c++
+        //     break
+        // }
+        // assert.equal(c, 1);c = 0
 
-        iters = this.q.query(this.untilStep(this.word('41234')), 0)
+        this.src = "    12  "
+        iters = q.query(this.until(w('34')), 0)
         for(let i of iters){
-            assert.deepStrictEqual(i, [28, '41234'])
+            console.log(i)
+            assert.fail('until fail here')
             c++
             break
         }
-        assert.equal(c, 1);c = 0
+        assert.equal(c, 0);c = 0
+
+        this.src = "    12"
+        iters = q.query(this.find(w('12')), 0)
+        for(let i of iters){
+            assert.deepStrictEqual(i, [6, '12'])
+            c++
+            break
+        }
+        assert.equal(c, 0);c = 0
+
+        iters = q.query(this.find(w('41234')), 0)
+        for(let i of iters){
+            c++
+            break
+        }
+        assert.equal(c, 0);c = 0
 
         //// line
         this.src = `
 asdf`;
-        iters = this.q.query(this.line(), 0)
+        iters = q.query(this.line, 0)
         for(let i of iters){
-            assert.deepStrictEqual(i, [1,''])
+            assert.deepStrictEqual(i, [1, ''])
             c++
             break
         }
@@ -69,7 +95,7 @@ asdf`;
  
   
 asdf`;
-        iters = this.q.query(this.lines(), 0)
+        iters = q.query(this.lines, 0)
         for(let i of iters){
             assert.deepStrictEqual(i, [10, ['', ' ', '  ', 'asdf']])
             c++
@@ -79,13 +105,19 @@ asdf`;
 
         // noblanks
         this.src = "asdf  asdf1"
-        iters = this.q.query(this.noblanks(), 0)
+        iters = q.query(nb, 0)
         assert.deepStrictEqual(iters.next().value, [4, "asdf"])
 
-        // predict
+        // follow
         this.src = "asdf1234"
-        iters = this.q.query(this.predict(this.word('asdf'), this.word('1234')), 0)
+        iters = q.query(follow(w('asdf'), w('1234')), 0)
         assert.deepStrictEqual(iters.next().value, [4, "asdf"])
+
+        // split
+        this.src = "asdf,asdf,asdf,asdf,asdf, , "
+        iters = q.query(this.split(any(w('asdf'), w('ksf')), w(',')), 0)
+        let v = iters.next().value
+        assert.deepStrictEqual(v, [24, ["asdf", "asdf", "asdf", "asdf", "asdf"]])
     }
 }
 

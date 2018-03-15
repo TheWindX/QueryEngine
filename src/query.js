@@ -1,3 +1,10 @@
+
+/* TODO
+ * recursive detective failed sometimes
+ * IFactCatch, IFactException
+ * IFact.clone
+*/
+
 const assert = require('assert')
 let sysUtil = require('util')
 const util = require('./util')
@@ -317,8 +324,8 @@ class IFactAllIter extends IFactIter {
 
 class IFactAll extends IFact {
     constructor(facts = []) {
-        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`all construct of ${f}`)})
         super()
+        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`all construct of ${f}`)})
         this.facts = facts
     }
 
@@ -376,6 +383,7 @@ class IFactNotIter extends IFactIter {
 class IFactNot extends IFact {
     constructor(fact) {
         super()
+        if(!(fact instanceof IFact)) throw new Error(`all construct of ${fact}`)
         this.fact = fact
     }
 
@@ -425,6 +433,7 @@ class IFactTryIter extends IFactIter {
 class IFactTry extends IFact { // we need it,  because not(not(f)) cannot carry value
     constructor(fact) {
         super()
+        if(!(fact instanceof IFact)) throw new Error(`all construct of ${fact}`)
         this.fact = fact
     }
 
@@ -458,7 +467,6 @@ function * query(fact, st, isRec = (st, st1) => st == st1) {
                 let st1 = factID2St.get(r.fact.id)
                 let bRec = isRec(r.st, st1)
                 if (bRec) {
-                    console.warn('left recursive')
                     iter.gain(null)
                 } else {
                     factID2St.set(r.fact.id, r.st)
@@ -541,8 +549,8 @@ const many = (f) => {
         }
         return r
     }
-    f1.push(f2)
-    f1.transform = ([a, b]) => {
+    f1.push(cut, f2) // cut in general case?
+    f1.transform = ([a, c, b]) => {
         if (b instanceof Array) {
             b.unshift(a)
             return b
@@ -580,16 +588,18 @@ const zero_one = (f) => {
     return any(f, ok)
 }
 
+// (!f, step)*
 const until = (stepFact, untilFact) => {
     let f = many(all(not(untilFact), stepFact))
-    let f1 = all(f, untilFact)
-    f1.transform = v => {
-        return v[1]
-    }
-    return f1
+    return f
 }
 
-
+// (until, match)
+const find = (stepFact, tofind) => {
+    let f = all(until(stepFact, tofind), tofind)
+    f.transform = ([_, v])=>v
+    return f
+}
 
 module.exports = {
     zero_one,
@@ -600,6 +610,7 @@ module.exports = {
     not,
     tryof,
     until,
+    find,
     cut,
     argument,
     ok,

@@ -10,22 +10,29 @@ class PyToken extends ParserBase {
         
         this.initState = 0
         
-        //token define
+        //token definations
         let t = this
         let str = t.word
 
+        let k = (w) => {
+            let r = q.all(str(w), q.tryof(str(' ')));
+            r.transform = ([v,_])=> v
+            return r
+        }
+        
         // var name
         t.tvar = t.regex(/^[_a-zA-Z]([_a-zA-Z0-9]*)/)
         t.tvar.transform = s=>['var', s]
 
+        // comment
         // `"""  ... '''`
         let q1 = str(`'''`)
         let q2 = str(`"""`)
-        t.tMultiComment = q.any(q.all(q1, t.untilStep(q1)), q.all(q2, t.untilStep(q2)))
+        t.tMultiComment = q.any(q.all(q1, t.until(q1)), q.all(q2, t.until(q2)))
         t.tMultiComment.transform = ([l, s], from, to)=>['comment', this.src.slice(from, to)];
         
         // `#
-        t.tSingleComment = q.all(str(`#`), this.line());
+        t.tSingleComment = q.all(str(`#`), this.line);
         t.tSingleComment.transform = (l)=>['comment', l];
 
         // space or prefix space
@@ -41,13 +48,13 @@ class PyToken extends ParserBase {
             }
         }
         
-        // other words
+        // other words that need not deal with
         t.tother = t.noblanks()
         t.tother.transform = s=> ['other']
 
         t.tokens = q.any(t.tprefix, 
-            str('('), str(')'), str(','), str(':'), str('*'), str('def'), 
-            t.tSingleComment, str('as'), str('import'), str('from'), 
+            str('('), str(')'), str(','), str('.'), str(':'), str('*'), k('def'), 
+            t.tSingleComment, k('as'), k('import'), k('from'), 
             t.tvar, t.tMultiComment, t.tother);
     }
 
