@@ -448,7 +448,7 @@ class IFactTry extends IFact { // we need it,  because not(not(f)) cannot carry 
     }
 }
 
-function * query(fact, st, isRec = (st, st1) => st == st1) {
+function * query(fact, st, isRec = (st, st1) => st <= st1) {
     try {
         if(st === undefined || st === null) throw new Error('query without param of "state"')
         if(fact === undefined || fact === null) throw new Error('query without param of "fact"')
@@ -467,6 +467,7 @@ function * query(fact, st, isRec = (st, st1) => st == st1) {
                 let st1 = factID2St.get(r.fact.id)
                 let bRec = isRec(r.st, st1)
                 if (bRec) {
+                    console.warn('left recursive')
                     iter.gain(null)
                 } else {
                     factID2St.set(r.fact.id, r.st)

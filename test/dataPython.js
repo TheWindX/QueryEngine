@@ -11,7 +11,7 @@ asdf
 
 data = json. xxload(asd ass d(a b) ass )
 
-//print len(data), "tweets"
+print len(data), "tweets"
 
 for tweet in data:
     print tweet['text']`

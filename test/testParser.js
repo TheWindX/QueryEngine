@@ -4,9 +4,7 @@ let util = require('../src/util')
 let q = require('../src/query')
 let PaserBase = require('../src/parserBase')
 
-let {data1} = require('./data_python')
-
-class Parser_test extends PaserBase{
+class ParserTest extends PaserBase{
     constructor(src){
         super(src)
     }
@@ -122,10 +120,6 @@ asdf`;
 }
 
 
-(new Parser_test('')).run()
+(new ParserTest('')).run()
 
-
-
-
-
-console.log('----------------------------------------------pass test python')
+console.log('----------------------------------------------pass test parser')
