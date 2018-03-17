@@ -89,7 +89,7 @@ class PaserBase {
         this.eof = this
         .q
         .make(idx => {
-            let r = (idx >= this.src.length) ? [idx, null] : null
+            let r = (idx >= this.src.length) ? [idx, ''] : null
             return r
         }); //TODO, only need ==
         
@@ -109,7 +109,7 @@ class PaserBase {
 
 
         // match end of line
-        this.endl = q.any(this.regex(/^\r?\n/), this.eof)
+        this.endl = this.regex(/^\r?\n/)
         
         //match to EOF
         this.gotoEnd = q.make((idx) => [
@@ -121,13 +121,14 @@ class PaserBase {
 
 
         // match to line
-        this.line = this.till(this.endl)
-        this.transform = (v, f, t)=>{
+        this.line = any(this.till(this.endl), this.till(this.eof))
+        this.line.transform = ([eidx, v], f, t)=>{
+            let r = this.src.slice(f, t-v.length)
             return this.src.slice(f, t-v.length)
         }
         //match all lines
         this.lines = q.many(this.line);
-
+        
         //match no blank
         // (!' ')+
         this.noblanks = () => {

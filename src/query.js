@@ -543,7 +543,8 @@ const many = (f) => {
     let fall = any()
     let fpath1 = all(f, fall)
     fpath1.transform = ([v, vs]) => {
-        return [v, ...vs]
+        let r = [v, ...vs]
+        return r
     }
     let fpath2 = ok
     fall.push(fpath1, fpath2)
@@ -572,7 +573,7 @@ const zero_one = (f) => {
 
 const until = (matchFact, stepFact, terminateFact) => {
     let tryStep = all(not(terminateFact), not(matchFact), stepFact)
-    let f = any(tryof(matchFact), all(many(tryStep), cut, not(terminateFact)))
+    let f = any(tryof(matchFact), all(many(tryStep), cut, tryof(matchFact)))
     f.transform = ([eidx, v])=>{
         if(eidx == 0){
             return []
@@ -590,7 +591,7 @@ const until = (matchFact, stepFact, terminateFact) => {
 let till = (matchFact, stepFact, terminateFact) => {
     let tryStep = all(not(terminateFact), not(matchFact), stepFact)
     let f = any(matchFact, all(many(tryStep), cut, matchFact))
-    f.transform = ([eidx, v])=>{
+    f.transform = ([eidx, v], f, t)=>{
         if(eidx == 0){
             return v
         } else {

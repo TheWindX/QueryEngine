@@ -23,6 +23,9 @@ class ParserTest extends PaserBase{
         let all = q.all
         let any = q.any
         let not = q.not
+        let l = this.line
+        let ls = this.lines
+        let eof = this.eof
         
         let test = (rule, n, exps) => {
             let iter = q.query(rule, n)
@@ -69,6 +72,21 @@ abcabc`
         test(until(w('x')), 0, [undefined])
         test(till(w('x')), 0, [undefined])
 
+        this.src = "asdfasdf"
+        test(till(this.eof), 0, [[8, ''], undefined]);
+        test(until(this.eof), 0, [[8, 'asdfasdf'], undefined]);
+
+        this.src = `
+`
+        test(this.line, 0, [[1, '']])
+        test(this.line, 1, [[1, '']])
+        test(this.line, 2, [[2, '']])
+        this.src = `
+        asdf
+        
+`
+        test(this.line, 0, [[1, '']])
+        // test(this.lines, 0, [[23, ['','        asdf','        ','']]]) //TODO, isseul, the las
 
 
         console.log('end-------------------')
