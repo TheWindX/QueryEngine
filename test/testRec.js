@@ -4,8 +4,6 @@ let util = require('../src/util')
 let q = require('../src/query')
 let PaserBase = require('../src/parserBase')
 
-let {data1} = require('./data_python')
-
 class ParserRec extends PaserBase{
     constructor(src){
         super(src)

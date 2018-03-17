@@ -27,10 +27,13 @@ class PyParser extends ParserBase {
 
         this.importInfo = []
 
-        let t = this;
-        let q = this.q;
+        let q = this.q
+        let w = this.eq
+        let all = q.all
+        let any = q.any
+
         let tag = (t) => {
-            return q.argument((idx) => {
+            return q.make((idx) => {
                 let v = this.src[idx]
                 if (v === undefined) 
                     return null
@@ -44,10 +47,9 @@ class PyParser extends ParserBase {
             })
         }
 
-        let str = this.eq
-
+        
         //import (x [as y])+ x [as y]
-        let xy = q.all(tag('var'), q.zero_one(q.all(str('as'), tag('var'))));
+        let xy = q.all(tag('var'), q.zero_one(q.all(w('as'), tag('var'))));
 
         xy.transform = (v) => {
             let r = [v[0]]
@@ -56,8 +58,8 @@ class PyParser extends ParserBase {
             return r
         }
 
-        let pimport = q.all(str('import'), q.many_one(xy))
-        //let pimport = str('import')
+        let pimport = q.all(w('import'), q.many_one(xy))
+        //let pimport = w('import')
         this.pimport = pimport
         pimport.transform = ([_, xys]) => {
             // this.importInfo.push(new PyImFrom(xys))
@@ -65,7 +67,7 @@ class PyParser extends ParserBase {
         }
 
         // from mod import (* | (x [as y])+)
-        let pfrom = q.all(str('from'), tag('var'), str('import'), q.any(str('*'), q.many_one(xy)))
+        let pfrom = q.all(w('from'), tag('var'), w('import'), q.any(w('*'), q.many_one(xy)))
         pfrom.transform = ([from, mod, im, starOrXys]) => {
             if (starOrXys == "*") {
                 return new PyImFrom(mod, null)
@@ -75,25 +77,17 @@ class PyParser extends ParserBase {
         }
 
         // def var ( till):
-        let pdef = q.all(str('def'), tag('var'), str('('), this.until(str(')')), str(':'))
+        let pdef = q.all(w('def'), tag('var'), w('('), this.until(w(')')), w(':'))
 
-        let l = (info)=>q.argument((st)=>{
-            console.log(info)
-            return [st, null]
-        })
+        // var `(  split(var, ',' )                `)
+        let papply = all()
+        let para = any(tag('var'), papply)
+        let paras = this.split(para, w(','))
 
-        // var `(  (var | apply | notStep( `)  )* `)
-        let papply = q.all()
-        papply.push(tag('var'), 
-            str('('),
-            q.many(
-                q.any(
-                    tag('var'), 
-                    papply,
-                    l('apply1'),
-                    )),
+        papply.push(
+            tag('var'), w('('), q.log('begin'), paras, q.log('paras'), w(')'), q.log('end'))
+        this.papply = papply
             
-            str(')'))
         // papply.transform = ([var_, l_, inners, r_])=>[var_, inners]
 
         let pother = q.all(this.step, q.not(this.eof))
@@ -103,7 +97,10 @@ class PyParser extends ParserBase {
     parse() {
         let q = this.q
         //let iters = this.q.query(this.q.many(this.pexpressions), 0)
-        let iters = q.query(q.many(this.pexpressions), 0)
+        //let iters = q.query(q.many(this.pexpressions), 0)
+        let iters = q.query(this.papply, 0)
+        util.inspect(iters.next().value)
+
         let ms = iters
             .next()
             .value[1]

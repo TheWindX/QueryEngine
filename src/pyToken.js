@@ -90,6 +90,7 @@ class PyToken extends ParserBase {
             lastToken = t
         }
         util.inspect(tokens)
+        console.log("------------------------------------")
         return tokens
     }
 };

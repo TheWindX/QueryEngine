@@ -93,6 +93,7 @@ class IFact {
         return this._transform
     }
 
+    // transform folder
     set transform(t) {
         let orinTransform = this._transform
         if (orinTransform) {
@@ -135,7 +136,7 @@ class IFactIter {
         this.st = st
     }
 
-    //返回st或iterator，或null
+    // 返回st或iterator，或null
     next() {
         return null
     }
@@ -146,28 +147,21 @@ class IFactIter {
 class IFactAtomIter extends IFactIter {
     constructor(fact, st) {
         super(fact, st)
-        this.done = false
+        this.iter = fact.iter(st)
     }
 
-    //返回st或iterator，或null
     next() {
-        if (this.done) 
-            return null
-        this.done = true
-        return this
-            .fact
-            .run(this.st)
+        let {value, done} = this.iter.next()
+        if(done) return null
+        else return value
     }
 }
 
 class IFactAtom extends IFact {
-    constructor() {
+    constructor(iter, name) {
         super()
-        this._name = 'atom'
-    }
-
-    run(st) {
-        return [st, null]
+        this._name = name? name:'atom'
+        this.iter = iter
     }
 
     getIter(st) {
@@ -175,24 +169,17 @@ class IFactAtom extends IFact {
     }
 }
 
-const argument = (judge, name) => {
-    let f = new IFactAtom()
-    f.run = judge
-    f.setName(name
-        ? name
-        : '<argument>')
-    return f
+const enumerable = (iter, name)=>{
+    return new IFactAtom(iter, name)
 }
 
-const ok = argument((st) => [
-    st, null
-], 'ok')
-
-const fail = argument((st) => null, 'fail')
-
-const cut = argument((st) => [
-    st, null
-], 'cut')
+const make = (judge, name) => {
+    return enumerable(function* (st) {
+        let v = judge(st)
+        if(v == null) return
+        yield v
+    }, name)
+}
 
 class IFactAnyIter extends IFactIter {
     constructor(fact, st) {
@@ -224,9 +211,9 @@ class IFactAnyIter extends IFactIter {
                 console.log('------------any ok')
                 console.log(`${this.fact.facts[this.idx]}: ${this.stVal}`)
             }
-            let r = this.stVal
+            let [st, v] = this.stVal
             this.stVal = null
-            return r
+            return [st, [this.idx, v]]
         }
     }
 
@@ -366,11 +353,11 @@ class IFactNotIter extends IFactIter {
             this.iter = fact.getIter(this.st)
             return this.iter
         } else {
-            if (this.stVal) {
-                return null
-            } else {
+            if (this.stVal == null) {
                 this.stVal = true // bug fix / to quit //dirty //TODO
                 return [this.st, null]
+            } else {
+                return null
             }
         }
     }
@@ -383,7 +370,7 @@ class IFactNotIter extends IFactIter {
 class IFactNot extends IFact {
     constructor(fact) {
         super()
-        if(!(fact instanceof IFact)) throw new Error(`all construct of ${fact}`)
+        if(!(fact instanceof IFact)) throw new Error(`not construct of ${fact}`)
         this.fact = fact
     }
 
@@ -541,79 +528,104 @@ const tryof = (f)=>{
     return new IFactTry(f) //not(not(f)) cannot carry value
 }
 
+const ok = make((st) => [
+    st, null
+], 'ok')
+
+const fail = make((st) => null, 'fail')
+
+const cut = make((st) => [
+    st, null
+], 'cut')
+
+// f* = f f* | ok // 
 const many = (f) => {
-    let f1 = all(f)
-    let f2 = any(f1, ok)
-    f2.transform = (r) => {
-        if (r == null) {
-            return []
+    let fall = any()
+    let fpath1 = all(f, fall)
+    fpath1.transform = ([v, vs]) => {
+        return [v, ...vs]
+    }
+    let fpath2 = ok
+    fall.push(fpath1, fpath2)
+    fall.transform = ([idx, v])=>{
+        if(v === null){
+            v = []
         }
-        return r
+        return v
     }
-    f1.push(cut, f2) // cut in general case?
-    f1.transform = ([a, c, b]) => {
-        if (b instanceof Array) {
-            b.unshift(a)
-            return b
-        } else {
-            return [a]
-        }
-    }
-    f3 = all(f2)
-    f3.transform = ([all]) => { //not to effect for f2 recursive tranform
-        return all
-    }
-    return f3
+    return fall
 }
 
 const many_one = (f) => {
-    let f1 = many(f)
-    let f2 = all(f)
-    f2.transform = ([a, b]) => {
-        if (b instanceof Array) {
-            b.unshift(a)
-            return b
-        } else {
-            return [a]
-        }
+    let f1 = f
+    let f2 = many(f)
+    let fall = all(f1, f2)
+    fall.transform = ([v, vs]) => {
+        return [v, ...vs]
     }
-    f2.push(f1)
-    f3 = all(f2)
-    f3.transform = ([all]) => { //not to effect for f2 recursive tranform
-        return all
-    }
-    return f3
+    return fall
 }
 
 const zero_one = (f) => {
     return any(f, ok)
 }
 
-// (!f, step)*
-const until = (stepFact, untilFact) => {
-    let f = many(all(not(untilFact), stepFact))
+const until = (matchFact, stepFact, terminateFact) => {
+    let tryStep = all(not(terminateFact), not(matchFact), stepFact)
+    let f = any(tryof(matchFact), all(many(tryStep), cut, not(terminateFact)))
+    f.transform = ([eidx, v])=>{
+        if(eidx == 0){
+            return []
+        } else {
+            let [trys, _, _1] = v
+            return trys.map(([_, _1, stepv])=>{
+                return stepv
+            })
+        }
+    }
     return f
 }
 
 // (until, match)
-const find = (stepFact, tofind) => {
-    let f = all(until(stepFact, tofind), tofind)
-    f.transform = ([_, v])=>v
+let till = (matchFact, stepFact, terminateFact) => {
+    let tryStep = all(not(terminateFact), not(matchFact), stepFact)
+    let f = any(matchFact, all(many(tryStep), cut, matchFact))
+    f.transform = ([eidx, v])=>{
+        if(eidx == 0){
+            return v
+        } else {
+            let [trys, _, matchV] = v
+            return matchV
+        }
+    }
     return f
 }
 
+const log = (msg)=>make(st=>{
+    let msg1 = msg //TODO // msg as param is reusable(why?), if(call it twice) cannot take as upvale, so copy it
+    if(msg1 === undefined){
+        msg1 = st
+    } else {
+        msg1 = `${msg1}:${st}`
+    }
+    console.log(`${msg1}`)
+    return [st, null]
+});
+
+
 module.exports = {
-    zero_one,
-    many,
-    many_one,
     any,
     all,
     not,
-    tryof,
+    tryof, // equal to not(not()), more efficence
+    zero_one,
+    many,
+    many_one,
     until,
-    find,
+    till,
+    log,
     cut,
-    argument,
+    make,
     ok,
     fail,
     query,

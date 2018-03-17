@@ -15,107 +15,64 @@ class ParserTest extends PaserBase{
         let b = this.blanks()
         let nb = this.noblanks()
         let regex = this.regex
+        let step = this.step
         let follow = this.follow
+        let until = this.until
+        let till = this.till
+        let eq = this.eq
         let all = q.all
         let any = q.any
-
-        let f = all(nb, b, q.cut)
-        f.transform = ([w, b, n]) => w
-        let f1 = q.many(f)
-        let f2 = all(f1, nb)
-        f2.transform = ([nbs, nb])=>{
-            return [...nbs, nb]
+        let not = q.not
+        
+        let test = (rule, n, exps) => {
+            let iter = q.query(rule, n)
+            for(let exp of exps){
+                assert.deepStrictEqual(exp, iter.next().value)
+            }
         }
         
-        let r = q.query(f2, 0)
 
-        let c = 0
-        let iters
-        ///regex
-        this.src = "    a23b"
-        iters = q.query(regex(/23/), 0)
-        assert.deepStrictEqual(iters.next().value, [7, "23"])
+        this.src = "abc123"
+        test(w('abc'), 0, [[3, 'abc']])
+        test(w('abc'), 1, [undefined])
+        test(w('123'), 3, [[6, '123']])
 
-        this.src = "  23    a23b"
-        iters = q.query(regex(/^23/), 2)
-        assert.deepStrictEqual(iters.next().value, [4, "23"])
+        this.src = ''
+        test(b, 0, [[0, '']])
+        test(b, 1, [undefined])
+
+        this.src = `   
+abcabc`
+        test(b, 0, [[4, '   \n']])
+        test(b, 1, [[4, '  \n']])
+        test(b, 3, [[4, '\n']])
+        test(b, 4, [[4, '']])
+
+        test(nb, 4, [[10, 'abcabc']])
+        test(nb, 5, [[10, 'bcabc']])
         
+        test(regex(/bc/), 0, [[7, 'bc']])
+        test(regex(/^bc/), 0, [undefined])
+        
+        test(step, 0, [[1, null]])
+        
+        test(eq(' '), 0, [[1, ' ']])
+        test(eq('a'), 4, [[5,'a']])
+        test(eq('x'), 4, [undefined])
 
-        ////until
-        // this.src = "    12  "
-        // iters = q.query(this.until(w('12')), 0)
-        // for(let i of iters){
-        //     assert.deepStrictEqual(i, [4, "    "])
-        //     c++
-        //     break
-        // }
-        // assert.equal(c, 1);c = 0
+        test(follow(w('a'), w('b')), 4, [[5, 'a']] )
+        test(follow(w('a'), w('x')), 4, [undefined] )
 
-        this.src = "    12  "
-        iters = q.query(this.until(w('34')), 0)
-        for(let i of iters){
-            console.log(i)
-            assert.fail('until fail here')
-            c++
-            break
-        }
-        assert.equal(c, 0);c = 0
 
-        this.src = "    12"
-        iters = q.query(this.find(w('12')), 0)
-        for(let i of iters){
-            assert.deepStrictEqual(i, [6, '12'])
-            c++
-            break
-        }
-        assert.equal(c, 0);c = 0
+        test(until(w('abc')), 0, [[4, '   \n']])
+        test(all(till(w('abc')), till(w('abc'))), 1, [[10, ['abc', 'abc']]])
+        test(until(w('x')), 0, [undefined])
+        test(till(w('x')), 0, [undefined])
 
-        iters = q.query(this.find(w('41234')), 0)
-        for(let i of iters){
-            c++
-            break
-        }
-        assert.equal(c, 0);c = 0
 
-        //// line
-        this.src = `
-asdf`;
-        iters = q.query(this.line, 0)
-        for(let i of iters){
-            assert.deepStrictEqual(i, [1, ''])
-            c++
-            break
-        }
-        assert.equal(c, 1);c = 0
 
-        /// lines
-        this.src = `
- 
-  
-asdf`;
-        iters = q.query(this.lines, 0)
-        for(let i of iters){
-            assert.deepStrictEqual(i, [10, ['', ' ', '  ', 'asdf']])
-            c++
-            break
-        }
-        assert.equal(c, 1);c = 0
-
-        // noblanks
-        this.src = "asdf  asdf1"
-        iters = q.query(nb, 0)
-        assert.deepStrictEqual(iters.next().value, [4, "asdf"])
-
-        // follow
-        this.src = "asdf1234"
-        iters = q.query(follow(w('asdf'), w('1234')), 0)
-        assert.deepStrictEqual(iters.next().value, [4, "asdf"])
-
-        // split
-        this.src = "asdf,asdf,asdf,asdf,asdf, , "
-        iters = q.query(this.split(any(w('asdf'), w('ksf')), w(',')), 0)
-        let v = iters.next().value
-        assert.deepStrictEqual(v, [24, ["asdf", "asdf", "asdf", "asdf", "asdf"]])
+        console.log('end-------------------')
+        
     }
 }
 

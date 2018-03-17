@@ -11,24 +11,25 @@ class PaserBase {
 
     init() {
         this.q = q
-        this.blanks = () => q.argument((idx) => {
+        let all = q.all
+        let any = q.any
+        let not = q.not
+        let tryof = q.tryof
+        let arg
+
+        // ' '*
+        this.blanks = () => q.make((idx) => {
             let i = idx
+            if(i > this.src.length ) return null
             for (; i < this.src.length; ++i) {
                 if (!/\s/.test(this.src[i])) 
                     break
             }
-            if (i > idx) 
-                return [
-                    i,
-                    this
-                        .src
-                        .slice(idx, i)
-                ]
-            return null
+            return [i, this.src.slice(idx, i)]
         }, 'blanks')
 
         this.word = (w) => {
-            return q.argument((idx) => {
+            return q.make((idx) => {
                 let r = this
                     .src
                     .startsWith(w, idx)
@@ -40,8 +41,9 @@ class PaserBase {
                 return r
             }, `${w}`)
         }
+
         this.regex = (r) => {
-            return q.argument((idx) => {
+            return q.make((idx) => {
                 let m = this
                     .src
                     .slice(idx)
@@ -56,22 +58,16 @@ class PaserBase {
                 return null
             }, r.toString())
         }
-        // step 1 char to succ
-        let step = () => this
-            .q
-            .argument((idx) => {
-                return [
-                    idx + 1,
-                    undefined
-                ]
-            }, 'step')
 
-        this.step = step()
-        this.notStep = (rule) => q.all(this.step, q.not(rule))
+        // step 1 item to succ
+        this.step = this.q
+            .make((idx) => {
+                return [idx + 1, null]
+            }, 'step')
 
         this.eq = (val) => this
             .q
-            .argument((idx) => {
+            .make((idx) => {
                 if (this.src[idx] === val) {
                     return [
                         idx + 1,
@@ -89,62 +85,53 @@ class PaserBase {
             return f1
         }
 
+        // math end of file
+        this.eof = this
+        .q
+        .make(idx => {
+            let r = (idx >= this.src.length) ? [idx, null] : null
+            return r
+        }); //TODO, only need ==
+        
         // step over 1 until match rule
         this.until = (rule) => {
-            let r = this
-                .q
-                .until(this.step, this.q.any(rule, this.eof));
-            let r1 = q.all(r, this.q.cut, q.not(this.eof)) //retrace will succ
-            r1.transform = (v, f, t) => {
-                return this
-                    .src
-                    .slice(f, t)
-            }
-            return r1
-        }
-
-        // step over 1 until match rule
-        this.find = (rule) => {
-            let r = this
-                .q
-                .all(this.q.find(this.step, this.q.any(rule, this.eof)), this.q.not(this.eof));
-            r.transform = ([v, _]) => {
-                return v
-            }
+            let r = q.until(rule, this.step, this.eof)
+            r.transform = (v, f, t)=>this.src.slice(f,t)
             return r
         }
 
-        // match end of line
-        this.endl = this.regex(/^\r?\n/)
-        
-        // math end of file
-        this.eof = this
-            .q
-            .argument(idx => {
-                let r = (idx >= this.src.length) ? [idx, null] : null
-                return r
-            }); //TODO, only need ==
+        // step over 1 until match rule
+        this.till = (rule) => {
+            let r = q.till(rule, this.step, this.eof)
+            return r
+        }
 
+
+
+        // match end of line
+        this.endl = q.any(this.regex(/^\r?\n/), this.eof)
+        
         //match to EOF
-        this.tillEnd = q.argument((idx) => [
+        this.gotoEnd = q.make((idx) => [
             this.src.length,
             this
                 .src
                 .slice(idx)
-        ], 'tillEnd')
+        ], 'gotoEnd')
 
 
         // match to line
-        let beforeEl = q.all(this.until(this.endl), this.endl)
-        beforeEl.transform = ([l, el])=>l
-        this.line = q.any(beforeEl, this.tillEnd)
-
+        this.line = this.till(this.endl)
+        this.transform = (v, f, t)=>{
+            return this.src.slice(f, t-v.length)
+        }
         //match all lines
         this.lines = q.many(this.line);
 
         //match no blank
+        // (!' ')+
         this.noblanks = () => {
-            let r = q.argument((idx) => {
+            let r = q.make((idx) => {
                 let i = idx
                 for (; i < this.src.length; ++i) {
                     if (/\s/.test(this.src[i])) {
