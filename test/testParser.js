@@ -24,6 +24,7 @@ class ParserTest extends PaserBase{
         let all = q.all
         let any = q.any
         let not = q.not
+        let many = q.many
         let tryof = q.tryof
         let l = t.line
         let ls = t.lines
@@ -45,8 +46,17 @@ class ParserTest extends PaserBase{
         r.transform = ([[eidx1, w1], [eidx2, w2]])=>{
             return [w1, w2]
         }
-
         test(r,0, [[6, ['a', 'bc123']], [6, ['ab', 'c123']], [6, ['abc', '123']]]);
+
+        t.src = 'aaaa'
+        r = many(any(w('a'), w('aa')))
+        r.transform = (eidxVs)=>{
+            let r = eidxVs.map(n=>n[1])
+            return r
+        }
+        test(r, 0, [[4, ['a', 'a', 'a', 'a']], [3, ['a', 'a', 'a']],[4, ['a', 'a', 'aa']]])
+
+        
 
         t.src = ''
         test(b, 0, [[0, '']])

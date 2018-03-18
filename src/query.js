@@ -1,5 +1,5 @@
 /* TODO
- * to fix f* = f * | ok, cannot to retrace f,
+ * to fix f* = f* f | ok, cannot to retrace f,
  * recursive detective failed sometimes
  * IFactCatch, IFactException
  * IFact.clone
@@ -193,34 +193,32 @@ const make = (judge, name) => {
 class IFactAnyIter extends IFactIter {
     constructor(fact, st) {
         super(fact, st)
+        this.facts = this.fact.facts
+        this.len = this.facts.length
         this.idx = 0
         this.stVal = undefined
+        this.iter = null
     }
 
     next() {
-        if(this.stVal !== undefined) {
-            if (this.stVal == null) {
-                if (debugAny) {
-                    console.log('any fail:'+this.fact.facts[this.idx].toString(0))
-                }
-                this.idx++
-            } else {
-                if (debugAny) {
-                    console.log(`any ok:${this.stVal[1]} of ${this.fact.facts[this.idx].toString(0)} `)
-                }
-                let [st, v] = this.stVal
-                this.stVal = undefined
-                let r = [st, [this.idx, v]]
-                this.idx++
-                return r
-            }
+        if(this.iter == null){
+            this.iter = this.facts[this.idx].getIter(this.st)
+            return this.iter
         }
-        if (this.idx == this.fact.facts.length) {
-            return null
+
+        if(this.stVal === undefined){
+            return this.iter
+        }
+        else if(this.stVal === null){
+            this.idx++
+            if(this.idx === this.len) return null
+            this.iter = this.facts[this.idx].getIter(this.st)
+            return this.iter
         } else {
-            let fact = this.fact.facts[this.idx]
-            let iter = fact.getIter(this.st)
-            return iter
+            let [st, val] = this.stVal
+            this.stVal = undefined
+            let r = [st, [this.idx, val]]
+            return r
         }
     }
 
@@ -589,7 +587,9 @@ const many = (f) => {
         }
         return v
     }
-    return fall
+    let fr = all(fall, ok)
+    fr.transform = (v)=>v[0]
+    return fr
 }
 
 const many_one = (f) => {
