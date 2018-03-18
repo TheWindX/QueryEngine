@@ -1,4 +1,4 @@
-let data1 = `a(a,c(d,e),b)`
+let data1 = `a(a,a(b),b)`
 
 let data1Back = `# importing the modules #1
     import urllib2 as K

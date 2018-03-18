@@ -1,5 +1,5 @@
-
 /* TODO
+ * to fix f* = f * | ok, cannot to retrace f,
  * recursive detective failed sometimes
  * IFactCatch, IFactException
  * IFact.clone
@@ -18,66 +18,68 @@ let debugOthers = true
 let debugTry = false
 let debugStkSize = 50
 let debug = {
-    rec(b){
+    rec(b) {
         debugRec = b
     },
-    stk(b){
+    stk(b) {
         debugStk = b
     },
-    stkSize(sz){
+    stkSize(sz) {
         debugStkSize = sz
     },
-    any(b){
+    any(b) {
         debugAny = b
     },
-    any(b){
+    all(b) {
         debugAll = b
     },
-    not(b){
+    not(b) {
         debugNot = b
     },
-    others(b){
+    others(b) {
         debugOthers = b
     },
-    try(b){
+    try(b) {
         debugTry = b
     }
 }
 
-
-
 class FactID2St {
-    constructor(){
+    constructor() {
         this.map = new Map()
     }
 
-    set(k, v){
-        if(debugRec){
+    set(k, v) {
+        if (debugRec) {
             console.log(`set k:${k}`, `v:${v}`)
         }
-        this.map.set(k, v)
-        if(this.map.size > debugStkSize){ //TODO
-            // console.log('--------')
-            // this.map.values(iter => iter.fact.toString())
-            //     .join('\n')
-            // console.log(strStk)
+        this
+            .map
+            .set(k, v)
+        if (this.map.size > debugStkSize) { //TODO
+            // console.log('--------') this.map.values(iter => iter.fact.toString())
+            // .join('\n') console.log(strStk)
             throw new Error(`FactID2St size of ${this.map.size} is too large`)
         }
     }
 
-    get(k){
-        let v = this.map.get(k)
-        if(debugRec){
+    get(k) {
+        let v = this
+            .map
+            .get(k)
+        if (debugRec) {
             console.log(`get k:${k}`, `v:${v}`)
         }
         return v
     }
 
-    delete(k){
-        if(debugRec){
+    delete(k) {
+        if (debugRec) {
             console.log(`del k:${k}`)
         }
-        this.map.delete(k);
+        this
+            .map
+            .delete(k);
     }
 }
 
@@ -106,8 +108,8 @@ class IFact {
         }
     }
 
-    name() {
-        return this._name
+    name(n) {
+        return '  '.repeat(n) + '.'+this._name
     }
 
     setName(n) {
@@ -118,13 +120,13 @@ class IFact {
         return new IFactIter(this, st)
     }
 
-    toString() {
+    toString(n) {
         if (this.rec_test) {
             this.rec_test = false
-            return 'rec'
+            return '  '.repeat(n) + 'rec'
         }
         this.rec_test = true
-        let r = this.name()
+        let r = this.name(n)
         this.rec_test = false
         return r
     }
@@ -151,16 +153,22 @@ class IFactAtomIter extends IFactIter {
     }
 
     next() {
-        let {value, done} = this.iter.next()
-        if(done) return null
-        else return value
+        let {value, done} = this
+            .iter
+            .next()
+        if (done) 
+            return null
+        else 
+            return value
     }
 }
 
 class IFactAtom extends IFact {
     constructor(iter, name) {
         super()
-        this._name = name? name:'atom'
+        this._name = name
+            ? name
+            : 'atom'
         this.iter = iter
     }
 
@@ -169,14 +177,15 @@ class IFactAtom extends IFact {
     }
 }
 
-const enumerable = (iter, name)=>{
+const enumerable = (iter, name) => {
     return new IFactAtom(iter, name)
 }
 
 const make = (judge, name) => {
-    return enumerable(function* (st) {
+    return enumerable(function * (st) {
         let v = judge(st)
-        if(v == null) return
+        if (v == null) 
+            return
         yield v
     }, name)
 }
@@ -184,36 +193,34 @@ const make = (judge, name) => {
 class IFactAnyIter extends IFactIter {
     constructor(fact, st) {
         super(fact, st)
-        this.idx = -1
-        this.iter = null; //fact.facts[0].getIter(st)
-        this.stVal = null
+        this.idx = 0
+        this.stVal = undefined
     }
 
     next() {
-        if (this.stVal == null) {
-            if (++this.idx == this.fact.facts.length) {
-                return null
+        if(this.stVal !== undefined) {
+            if (this.stVal == null) {
+                if (debugAny) {
+                    console.log('any fail:'+this.fact.facts[this.idx].toString(0))
+                }
+                this.idx++
             } else {
                 if (debugAny) {
-                    console.log('------------any fail')
-                    console.log(this.fact.facts[this.idx].toString())
+                    console.log(`any ok:${this.stVal[1]} of ${this.fact.facts[this.idx].toString(0)} `)
                 }
-                let fact = this.fact.facts[this.idx]
-                if (debugAny) {
-                    if (!(fact instanceof IFact)) 
-                        throw `${sysUtil.inspect(fact)} is not fact`
-                }
-                this.iter = fact.getIter(this.st)
-                return this.iter
+                let [st, v] = this.stVal
+                this.stVal = undefined
+                let r = [st, [this.idx, v]]
+                this.idx++
+                return r
             }
+        }
+        if (this.idx == this.fact.facts.length) {
+            return null
         } else {
-            if (debugAny) {
-                console.log('------------any ok')
-                console.log(`${this.fact.facts[this.idx]}: ${this.stVal}`)
-            }
-            let [st, v] = this.stVal
-            this.stVal = null
-            return [st, [this.idx, v]]
+            let fact = this.fact.facts[this.idx]
+            let iter = fact.getIter(this.st)
+            return iter
         }
     }
 
@@ -224,21 +231,28 @@ class IFactAnyIter extends IFactIter {
 
 class IFactAny extends IFact {
     constructor(facts = []) {
-        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`any construct of ${f}`)})
-        
+        facts.forEach(f => {
+            if (!(f instanceof IFact)) 
+                throw new Error(`any construct of ${f}`)
+        })
+
         super()
         this.facts = facts
     }
 
-    name() {
-        return `any(${this
+    name(n) {
+        return `${ '  '.repeat(n)}|
+${this
             .facts
-            .map(f => f.toString())
-            .join(',')})`
+            .map(f => f.toString(n + 1))
+            .join(',\n')}`
     }
 
     push(...facts) {
-        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`any push of ${f}`)})
+        facts.forEach(f => {
+            if (!(f instanceof IFact)) 
+                throw new Error(`any push of ${f}`)
+        })
         this
             .facts
             .push(...facts)
@@ -266,6 +280,7 @@ class IFactAllIter extends IFactIter {
             if (debugAll) {
                 if (!(fact instanceof IFact)) 
                     throw `${sysUtil.inspect(fact)} is not fact`
+                console.log(`try ${this.idx}:${fact.toString(0)}`)
             }
             let iter = fact.getIter(this.st)
             this.iters[this.idx] = iter
@@ -286,6 +301,9 @@ class IFactAllIter extends IFactIter {
                     }
                     let iter = fact.getIter(st)
                     this.iters[this.idx] = iter
+                    if(debugAll){
+                        console.log(`try ${this.idx}:${fact.toString(0)}`)
+                    }
                     return iter
                 } else {
                     return [
@@ -300,6 +318,9 @@ class IFactAllIter extends IFactIter {
             let iter = this.iters[this.idx]
             if (iter.fact == cut) 
                 return null
+            if(debugAll){
+                console.log(`retrace to: ${this.idx}:${iter.fact.toString(0)}`)
+            }
             return iter
         }
     }
@@ -312,19 +333,26 @@ class IFactAllIter extends IFactIter {
 class IFactAll extends IFact {
     constructor(facts = []) {
         super()
-        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`all construct of ${f}`)})
+        facts.forEach(f => {
+            if (!(f instanceof IFact)) 
+                throw new Error(`all construct of ${f}`)
+        })
         this.facts = facts
     }
 
-    name() {
-        return `all(${this
+    name(n) {
+        return `${ '  '.repeat(n)}+
+${this
             .facts
-            .map(f => f.toString())
-            .join(',')})`
+            .map(f => f.toString(n + 1))
+            .join(',\n')}`
     }
 
     push(...facts) {
-        facts.forEach(f=>{if(!(f instanceof IFact)) throw new Error(`all push of ${f}`)})
+        facts.forEach(f => {
+            if (!(f instanceof IFact)) 
+                throw new Error(`all push of ${f}`)
+        })
         this
             .facts
             .push(...facts)
@@ -370,14 +398,15 @@ class IFactNotIter extends IFactIter {
 class IFactNot extends IFact {
     constructor(fact) {
         super()
-        if(!(fact instanceof IFact)) throw new Error(`not construct of ${fact}`)
+        if (!(fact instanceof IFact)) 
+            throw new Error(`not construct of ${fact}`)
         this.fact = fact
     }
 
-    name() {
-        return `not(${this
+    name(n) {
+        return `${ '  '.repeat(n)}not(${this
             .fact
-            .toString()})`
+            .toString(n + 1)}`
     }
 
     getIter(st) {
@@ -386,7 +415,7 @@ class IFactNot extends IFact {
 }
 
 class IFactTryIter extends IFactIter {
-    constructor(fact, st){
+    constructor(fact, st) {
         super(fact, st)
         this.iter = null
         this.stVal = null
@@ -403,7 +432,8 @@ class IFactTryIter extends IFactIter {
             return this.iter
         } else {
             if (this.stVal) {
-                let [st, val] = this.stVal
+                let [st,
+                    val] = this.stVal
                 this.stVal = null
                 return [this.st, val]
             } else {
@@ -420,14 +450,15 @@ class IFactTryIter extends IFactIter {
 class IFactTry extends IFact { // we need it,  because not(not(f)) cannot carry value
     constructor(fact) {
         super()
-        if(!(fact instanceof IFact)) throw new Error(`all construct of ${fact}`)
+        if (!(fact instanceof IFact)) 
+            throw new Error(`all construct of ${fact}`)
         this.fact = fact
     }
 
-    name() {
-        return `try(${this
+    name(n) {
+        return `${ '  '.repeat(n)}try(${this
             .fact
-            .toString()})`
+            .toString(n + 1)})`
     }
 
     getIter(st) {
@@ -437,15 +468,17 @@ class IFactTry extends IFact { // we need it,  because not(not(f)) cannot carry 
 
 function * query(fact, st, isRec = (st, st1) => st <= st1) {
     try {
-        if(st === undefined || st === null) throw new Error('query without param of "state"')
-        if(fact === undefined || fact === null) throw new Error('query without param of "fact"')
+        if (st === undefined || st === null) 
+            throw new Error('query without param of "state"')
+        if (fact === undefined || fact === null) 
+            throw new Error('query without param of "fact"')
         let factID2St = new FactID2St()
         factID2St.set(fact.id, st)
         let iterStk = []
         if (debugOthers) {
             if (!(fact instanceof IFact)) 
                 throw Error(`${sysUtil.inspect(fact)}(${fact}) is not fact`);
-        }
+            }
         let iter = fact.getIter(st)
 
         for (; true;) {
@@ -464,7 +497,7 @@ function * query(fact, st, isRec = (st, st1) => st <= st1) {
                     if (debugStk) {
                         console.log('--------')
                         let strStk = iterStk
-                            .map(iter => iter.fact.toString())
+                            .map(iter => iter.fact.toString(0))
                             .join('\n')
                         console.log(strStk)
                     }
@@ -474,7 +507,7 @@ function * query(fact, st, isRec = (st, st1) => st <= st1) {
                 if (debugStk) {
                     console.log('--------')
                     let strStk = iterStk
-                        .map(iter => iter.fact.toString())
+                        .map(iter => iter.fact.toString(0))
                         .join('\n')
                     console.log(strStk)
                 }
@@ -524,7 +557,7 @@ const not = (f) => {
     return new IFactNot(f)
 }
 
-const tryof = (f)=>{
+const tryof = (f) => {
     return new IFactTry(f) //not(not(f)) cannot carry value
 }
 
@@ -538,18 +571,20 @@ const cut = make((st) => [
     st, null
 ], 'cut')
 
-// f* = f f* | ok // 
+// f* = f f* | ok //
 const many = (f) => {
     let fall = any()
     let fpath1 = all(f, fall)
     fpath1.transform = ([v, vs]) => {
-        let r = [v, ...vs]
+        let r = [
+            v, ...vs
+        ]
         return r
     }
     let fpath2 = ok
     fall.push(fpath1, fpath2)
-    fall.transform = ([idx, v])=>{
-        if(v === null){
+    fall.transform = ([idx, v]) => {
+        if (v === null) {
             v = []
         }
         return v
@@ -562,24 +597,32 @@ const many_one = (f) => {
     let f2 = many(f)
     let fall = all(f1, f2)
     fall.transform = ([v, vs]) => {
-        return [v, ...vs]
+        return [
+            v, ...vs
+        ]
     }
     return fall
 }
 
 const zero_one = (f) => {
-    return any(f, ok)
+    let f1 = any(f, ok)
+    f1.transform = ([eidx, v]) => {
+        return v
+    }
+    return f1
 }
 
 const until = (matchFact, stepFact, terminateFact) => {
     let tryStep = all(not(terminateFact), not(matchFact), stepFact)
     let f = any(tryof(matchFact), all(many(tryStep), cut, tryof(matchFact)))
-    f.transform = ([eidx, v])=>{
-        if(eidx == 0){
+    f.transform = ([eidx, v]) => {
+        if (eidx == 0) {
             return []
         } else {
-            let [trys, _, _1] = v
-            return trys.map(([_, _1, stepv])=>{
+            let [trys,
+                _,
+                _1] = v
+            return trys.map(([_, _1, stepv]) => {
                 return stepv
             })
         }
@@ -591,20 +634,24 @@ const until = (matchFact, stepFact, terminateFact) => {
 let till = (matchFact, stepFact, terminateFact) => {
     let tryStep = all(not(terminateFact), not(matchFact), stepFact)
     let f = any(matchFact, all(many(tryStep), cut, matchFact))
-    f.transform = ([eidx, v], f, t)=>{
-        if(eidx == 0){
+    f.transform = ([
+        eidx, v
+    ], f, t) => {
+        if (eidx == 0) {
             return v
         } else {
-            let [trys, _, matchV] = v
+            let [trys,
+                _,
+                matchV] = v
             return matchV
         }
     }
     return f
 }
 
-const log = (msg)=>make(st=>{
+const log = (msg) => make(st => {
     let msg1 = msg //TODO // msg as param is reusable(why?), if(call it twice) cannot take as upvale, so copy it
-    if(msg1 === undefined){
+    if (msg1 === undefined) {
         msg1 = st
     } else {
         msg1 = `${msg1}:${st}`
@@ -612,7 +659,6 @@ const log = (msg)=>make(st=>{
     console.log(`${msg1}`)
     return [st, null]
 });
-
 
 module.exports = {
     any,

@@ -44,7 +44,7 @@ class PyParser extends ParserBase {
                     ]
                 }
                 return null
-            })
+            }, `${t}`)
         }
 
         
@@ -81,11 +81,11 @@ class PyParser extends ParserBase {
 
         // var `(  split(var, ',' )                `)
         let papply = all()
-        let para = any(tag('var'), papply)
+        let para = any(tag('var'), papply )
         let paras = this.split(para, w(','))
+        this.paras = paras
 
-        papply.push(
-            tag('var'), w('('), q.log('begin'), paras, q.log('paras'), w(')'), q.log('end'))
+        papply.push(tag('var'), w('('), paras, w(')'))
         this.papply = papply
             
         // papply.transform = ([var_, l_, inners, r_])=>[var_, inners]
@@ -98,18 +98,24 @@ class PyParser extends ParserBase {
         let q = this.q
         //let iters = this.q.query(this.q.many(this.pexpressions), 0)
         //let iters = q.query(q.many(this.pexpressions), 0)
+        console.log('begin')
+        this.q.debug.all(true)
+        this.q.debug.any(true)
         let iters = q.query(this.papply, 0)
-        util.inspect(iters.next().value)
+        util.inspect(iters.next())
+        this.q.debug.any(false)
+        this.q.debug.all(false)
+        console.log('end')
 
-        let ms = iters
-            .next()
-            .value[1]
-        ms = ms.filter(m => {
-            if(m == null)return false
-            if((m instanceof Array) && m[0] === undefined)return false
-            return true
-        })
-        util.inspect(ms)
+        // let ms = iters
+        //     .next()
+        //     .value
+        // ms = ms.filter(m => {
+        //     if(m == null)return false
+        //     if((m instanceof Array) && m[0] === undefined)return false
+        //     return true
+        // })
+        //util.inspect(ms)
     }
 }
 

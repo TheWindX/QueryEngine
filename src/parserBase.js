@@ -75,7 +75,7 @@ class PaserBase {
                     ]
                 }
                 return null
-            });
+            }, `${val}`);
 
         this.follow = (f, next) => {
             let f1 = q.all(f, q.tryof(next))
@@ -153,11 +153,17 @@ class PaserBase {
 
         // r [, r]+
         this.split = (rule, splitor) => {
-            let r = q.all(rule, q.many(q.all(splitor, rule)))
-            r.transform = ([v, svs])=>{
-                let vs = svs.map(sv=>sv[1])
-                vs.unshift(v)
-                return vs
+            let r = q.zero_one(q.all(rule, q.many(q.all(splitor, rule))))
+            r.transform = (val)=>{
+                console.log('split:'+val)
+                if(val instanceof Array) {
+                    let [v, svs] = val
+                    let vs = svs.map(sv=>sv[1])
+                    vs.unshift(v)
+                    return vs
+                } else {
+                    return []
+                }
             }
             return r
         }

@@ -10,22 +10,25 @@ class ParserTest extends PaserBase{
     }
 
     run() {
-        let q = this.q
-        let w = this.word
-        let b = this.blanks()
-        let nb = this.noblanks()
-        let regex = this.regex
-        let step = this.step
-        let follow = this.follow
-        let until = this.until
-        let till = this.till
-        let eq = this.eq
+        let t = this
+        let q = t.q
+        let w = t.word
+        let b = t.blanks()
+        let nb = t.noblanks()
+        let regex = t.regex
+        let step = t.step
+        let follow = t.follow
+        let until = t.until
+        let till = t.till
+        let eq = t.eq
         let all = q.all
         let any = q.any
         let not = q.not
-        let l = this.line
-        let ls = this.lines
-        let eof = this.eof
+        let tryof = q.tryof
+        let l = t.line
+        let ls = t.lines
+        let eof = t.eof
+        let split = t.split
         
         let test = (rule, n, exps) => {
             let iter = q.query(rule, n)
@@ -34,17 +37,22 @@ class ParserTest extends PaserBase{
             }
         }
         
-
-        this.src = "abc123"
+        t.src = "abc123"
         test(w('abc'), 0, [[3, 'abc']])
         test(w('abc'), 1, [undefined])
         test(w('123'), 3, [[6, '123']])
+        let r = all(any(w('a'), w('ab'), w('abc')),  any(w('123'), w('c123'), w('bc123')))
+        r.transform = ([[eidx1, w1], [eidx2, w2]])=>{
+            return [w1, w2]
+        }
 
-        this.src = ''
+        test(r,0, [[6, ['a', 'bc123']], [6, ['ab', 'c123']], [6, ['abc', '123']]]);
+
+        t.src = ''
         test(b, 0, [[0, '']])
         test(b, 1, [undefined])
 
-        this.src = `   
+        t.src = `   
 abcabc`
         test(b, 0, [[4, '   \n']])
         test(b, 1, [[4, '  \n']])
@@ -72,22 +80,27 @@ abcabc`
         test(until(w('x')), 0, [undefined])
         test(till(w('x')), 0, [undefined])
 
-        this.src = "asdfasdf"
-        test(till(this.eof), 0, [[8, ''], undefined]);
-        test(until(this.eof), 0, [[8, 'asdfasdf'], undefined]);
+        t.src = "asdfasdf"
+        test(till(t.eof), 0, [[8, ''], undefined]);
+        test(until(t.eof), 0, [[8, 'asdfasdf'], undefined]);
 
-        this.src = `
+        t.src = `
 `
-        test(this.line, 0, [[1, '']])
-        test(this.line, 1, [[1, '']])
-        test(this.line, 2, [[2, '']])
-        this.src = `
+        test(l, 0, [[1, '']])
+        test(l, 1, [[1, '']])
+        test(l, 2, [[2, '']])
+        t.src = `
         asdf
         
 `
-        test(this.line, 0, [[1, '']])
-        // test(this.lines, 0, [[23, ['','        asdf','        ','']]]) //TODO, isseul, the las
+        test(l, 0, [[1, '']])
+        // test(ls, 0, [[23, ['','        asdf','        ','']]]) //TODO, isseul, the las
+        console.log(ls)
+        test(ls, 0, [[23, ['','        asdf','        ']]]) //TODO, isseul, the las
 
+        this.src="asdfxasdfxasdf"
+        test(split(w('asdf'), w('x')), 0, [[14, ['asdf','asdf','asdf']]])
+        test(split(w('asdf'), w('a')), 0, [[4, ['asdf']]])
 
         console.log('end-------------------')
         

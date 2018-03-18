@@ -8,14 +8,32 @@ class PyToken extends ParserBase {
     constructor(src){
         super(src)
         
-        this.initState = 0
-        
-        //token definations
         let t = this
-        let str = t.word
+        let q = t.q
+        let w = t.word
+        let b = t.blanks()
+        let nb = t.noblanks()
+        let regex = t.regex
+        let step = t.step
+        let follow = t.follow
+        let until = t.until
+        let till = t.till
+        let eq = t.eq
+        let all = q.all
+        let any = q.any
+        let not = q.not
+        let tryof = q.tryof
+        let l = t.line
+        let ls = t.ls
+        let eof = t.eof
 
-        let k = (w) => {
-            let r = q.all(str(w), q.tryof(str(' ')));
+
+        //token definations
+        t.initState = 0
+
+        //keyword
+        let k = (text) => {
+            let r = all(w(text), tryof(w(' ')));
             r.transform = ([v,_])=> v
             return r
         }
@@ -26,13 +44,13 @@ class PyToken extends ParserBase {
 
         // comment
         // `"""  ... '''`
-        let q1 = str(`'''`)
-        let q2 = str(`"""`)
-        t.tMultiComment = q.any(q.all(q1, t.until(q1)), q.all(q2, t.until(q2)))
-        t.tMultiComment.transform = ([l, s], from, to)=>['comment', this.src.slice(from, to)];
+        let q1 = w(`'''`)
+        let q2 = w(`"""`)
+        t.tMultiComment = any(all(q1, until(q1)), all(q2, until(q2)))
+        t.tMultiComment.transform = (v, from, to)=>['comment', t.src.slice(from, to)];
         
         // `#
-        t.tSingleComment = q.all(str(`#`), this.line);
+        t.tSingleComment = all(w(`#`), l);
         t.tSingleComment.transform = (l)=>['comment', l];
 
         // space or prefix space
@@ -52,16 +70,17 @@ class PyToken extends ParserBase {
         t.tother = t.noblanks()
         t.tother.transform = s=> ['other']
 
-        t.tokens = q.any(t.tprefix, 
-            str('('), str(')'), str(','), str('.'), str(':'), str('*'), k('def'), 
+        t.tokens = any(t.tprefix, 
+            w('('), w(')'), w(','), w('.'), w(':'), w('*'), k('def'), 
             t.tSingleComment, k('as'), k('import'), k('from'), 
             t.tvar, t.tMultiComment, t.tother);
     }
 
     getTokens() {
-        let iters = this.q.query(q.many(this.tokens), 0)
+        let q = this.q
+        let iters = q.query(q.many(this.tokens), 0)
         // filter no used words
-        let tokens = iters.next().value[1]
+        let tokens = iters.next().value[1].map(([eidx, v])=>v)
         tokens = tokens.filter(t=>{
             if((t instanceof Array)){
                 let tag = t[0]
