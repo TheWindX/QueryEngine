@@ -4,15 +4,30 @@ let util = require('./util')
 let q = require('./query')
 let ParserBase = require('./parserBase')
 
+class tokenStruct {
+    constructor(tag, from, to, value){
+        this.tag = tag
+        this.from = from
+        this.to = to
+        this.value = value
+    }
+
+    toString(){
+        return `${this.tag}:${this.value}`
+    }
+}
+
+
 class PyToken extends ParserBase {
     constructor(src){
         super(src)
         
         let t = this
         let q = t.q
-        let w = t.word
-        let b = t.blanks()
-        let nb = t.noblanks()
+        //let w = t.word
+        let blank = t.blank
+        let blanks = t.blanks()
+        let noblanks = t.noblanks()
         let regex = t.regex
         let step = t.step
         let follow = t.follow
@@ -22,58 +37,78 @@ class PyToken extends ParserBase {
         let all = q.all
         let any = q.any
         let not = q.not
+        let many = q.many
         let tryof = q.tryof
-        let l = t.line
-        let ls = t.ls
+        let line = t.line
+        let lines = t.lines
         let eof = t.eof
+        let split = t.split
 
 
         //token definations
         t.initState = 0
 
+        let w = (str)=>{
+            let r = q.make((idx)=>{
+                if(this.src.startsWith(str, idx)){
+                    return [idx+str.length, str]
+                } else {
+                    return null
+                }
+            })
+
+            r.transform = (v, f, t)=>{
+                return new tokenStruct('str', f, t, v)
+            }
+            return r
+        }
+
         //keyword
         let k = (text) => {
-            let r = all(w(text), tryof(w(' ')));
-            r.transform = ([v,_])=> v
+            let r = all(this.word(text), tryof(blank));
+            r.transform = ([v,_],f,t)=> new tokenStruct('str', f, t, v)
             return r
         }
         
         // var name
         t.tvar = t.regex(/^[_a-zA-Z]([_a-zA-Z0-9]*)/)
-        t.tvar.transform = s=>['var', s]
+        t.tvar.transform = (v, f, t) =>new tokenStruct('var', f, t, v)
 
         // comment
-        // `"""  ... '''`
-        let q1 = w(`'''`)
-        let q2 = w(`"""`)
-        t.tMultiComment = any(all(q1, until(q1)), all(q2, until(q2)))
-        t.tMultiComment.transform = (v, from, to)=>['comment', t.src.slice(from, to)];
+        // `"""  ... '''` to endl
+        let q1 = this.word(`'''`); let comment1 = all(q1, until(q1)) // """ """
+        let q2 = this.word(`"""`); let comment2 = all(q2, until(q2)) // ''' '''
+        let comment = any(comment1, comment2) //
+        t.tMultiComment = all(comment, line) // ''' ''' ... \n
+        t.tMultiComment.transform = (v, f, t)=>new tokenStruct('comment', f, t)
         
+
         // `#
-        t.tSingleComment = all(w(`#`), l);
-        t.tSingleComment.transform = (l)=>['comment', l];
+        t.tSingleComment = all(w(`#`), line);
+        t.tSingleComment.transform = (v, f, t)=> new tokenStruct('comment', f, t)
 
         // space or prefix space
         t.tprefix = t.blanks()
-        t.tprefix.transform = (bs, from, to) => {
+        t.tprefix.transform = (bs, f, t) => {
             let last = bs.lastIndexOf('\n')
-            let len = to-(from + bs.lastIndexOf('\n') + 1)
-            if(last == -1){
-                if(from == 0) return ['prefix', len]
-                else return ['space']
+            // util.inspect(`------------------bs:${bs}=${bs.length}, last:${last}`)
+            if(last == -1){ // single line
+                if(f == 0) return new tokenStruct('prefix', f, t, bs)
+                else return new tokenStruct('space', f, t, bs)
             } else {
-                return ['prefix', len]
+                return new tokenStruct('prefix', f, t, bs.slice(last+1))
             }
         }
         
         // other words that need not deal with
-        t.tother = t.noblanks()
-        t.tother.transform = s=> ['other']
+        t.tSkip = all(this.step, not(eof))
+        t.tSkip.transform = (s, f, t)=> new tokenStruct('skip', f, t)
 
+        
         t.tokens = any(t.tprefix, 
             w('('), w(')'), w(','), w('.'), w(':'), w('*'), k('def'), 
             t.tSingleComment, k('as'), k('import'), k('from'), 
-            t.tvar, t.tMultiComment, t.tother);
+            t.tvar, t.tMultiComment, t.tSkip);
     }
 
     getTokens() {
@@ -82,9 +117,9 @@ class PyToken extends ParserBase {
         // filter no used words
         let tokens = iters.next().value[1].map(([eidx, v])=>v)
         tokens = tokens.filter(t=>{
-            if((t instanceof Array)){
-                let tag = t[0]
-                if(tag === 'other' || tag === 'space' || tag === 'comment'){
+            if(t instanceof tokenStruct){
+                let tag = t.tag
+                if(/*tag === 'skip' || */tag === 'space' || tag === 'comment'){
                     return false
                 }
             } 
@@ -96,10 +131,18 @@ class PyToken extends ParserBase {
         let tokens1 = tokens
         tokens = []
         for(let t of tokens1){
-            if((t instanceof Array)&&t[0] == "prefix"&&(lastToken instanceof Array)){ // when 'prefix' is adjacency, remove previous, take the last
-                if(t[1] == lastToken[1]){
-                    tokens.pop()
-                    tokens.push(t)
+            if(t instanceof tokenStruct){
+                if(lastToken instanceof tokenStruct){
+                    if(t.tag == "prefix" && lastToken.tag == "prefix"){
+                        tokens.pop()
+                        tokens.push(t)    
+                    } else if(t.tag == "skip" && lastToken.tag == "skip"){
+                        let l = tokens.pop()
+                        t.from = l.from
+                        tokens.push(t)
+                    } else {
+                        tokens.push(t)
+                    }
                 } else {
                     tokens.push(t)
                 }
@@ -109,9 +152,9 @@ class PyToken extends ParserBase {
             lastToken = t
         }
         util.inspect(tokens)
-        console.log("------------------------------------")
         return tokens
     }
+    
 };
 
 module.exports = PyToken

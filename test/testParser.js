@@ -105,7 +105,6 @@ abcabc`
 `
         test(l, 0, [[1, '']])
         // test(ls, 0, [[23, ['','        asdf','        ','']]]) //TODO, isseul, the las
-        console.log(ls)
         test(ls, 0, [[23, ['','        asdf','        ']]]) //TODO, isseul, the las
 
         this.src="asdfxasdfxasdf"

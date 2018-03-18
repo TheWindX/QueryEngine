@@ -18,6 +18,12 @@ class PaserBase {
         let arg
 
         // ' '*
+        this.blank = q.make((idx)=>{
+            if(idx >= this.src.length ) return [idx, '']
+            if (/\s/.test(this.src[idx])) return [idx, this.src[idx]]
+            return null
+        })
+        
         this.blanks = () => q.make((idx) => {
             let i = idx
             if(i > this.src.length ) return null
@@ -155,7 +161,6 @@ class PaserBase {
         this.split = (rule, splitor) => {
             let r = q.zero_one(q.all(rule, q.many(q.all(splitor, rule))))
             r.transform = (val)=>{
-                console.log('split:'+val)
                 if(val instanceof Array) {
                     let [v, svs] = val
                     let vs = svs.map(sv=>sv[1])
