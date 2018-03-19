@@ -12,41 +12,6 @@ const assert = require('assert')
 let sysUtil = require('util')
 const util = require('./util')
 
-let debugRec = false
-let debugStk = false
-let debugAny = false
-let debugAll = false
-let debugNot = false
-let debugOthers = true
-let debugTry = false
-let debugStkSize = 50
-let debug = {
-    rec(b) {
-        debugRec = b
-    },
-    stk(b) {
-        debugStk = b
-    },
-    stkSize(sz) {
-        debugStkSize = sz
-    },
-    any(b) {
-        debugAny = b
-    },
-    all(b) {
-        debugAll = b
-    },
-    not(b) {
-        debugNot = b
-    },
-    others(b) {
-        debugOthers = b
-    },
-    try(b) {
-        debugTry = b
-    }
-}
-
 class FactID2St {
     constructor() {
         this.map = new Map()
@@ -663,6 +628,42 @@ const log = (msg) => make(st => {
     return [st, null]
 });
 
+
+
+let debugRec = false
+let debugStk = false
+let debugAny = false
+let debugAll = false
+let debugNot = false
+let debugOthers = true
+let debugTry = false
+let debugStkSize = 50
+let debug = {
+    rec(b) {
+        debugRec = b
+    },
+    stk(b) {
+        debugStk = b
+    },
+    stkSize(sz) {
+        debugStkSize = sz
+    },
+    any(b) {
+        debugAny = b
+    },
+    all(b) {
+        debugAll = b
+    },
+    not(b) {
+        debugNot = b
+    },
+    others(b) {
+        debugOthers = b
+    },
+    try(b) {
+        debugTry = b
+    }
+}
 module.exports = {
     any,
     all,

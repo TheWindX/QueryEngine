@@ -3,7 +3,29 @@ const util = require('./util')
 const ParserBase = require('./parserBase')
 const PyToken = require('./pyToken')
 
-class pyStruct {
+class PyBlock {
+    constructor(margin){
+        this.margin = margin
+        this.pyLines = []
+    }
+
+    push(pyLine) {
+        this.pyLines.push(pyLine)
+    }
+}
+
+class PyLine {
+    constructor(parentBlock){
+        this.parentBlock = parentBlock
+        this.subBlock = null
+    }
+
+    setStruct(pyStruct){
+        this.pyStruct = pyStruct
+    }
+}
+
+class PyStruct {
     constructor(from, to){
         this.from = from
         this.to = to
@@ -14,19 +36,18 @@ class pyStruct {
     }
 }
 
-class pyPrefix extends pyStruct{
-    constructor(from, to, prefix){
-        this.from = from
-        this.to = to
-        this.prefix = prefix
+class PyMargin extends PyStruct{
+    constructor(from, to, margin){
+        super(from, to)
+        this.margin = margin
     }
 
     toString(){
-        return `from:${this.from},to:${this.to}`
+        return this.margin
     }
 }
 
-class PyImMod extends pyStruct{
+class PyImMod extends PyStruct{
     constructor(f, t, xys) {
         super(f, t)
         this.xys = []
@@ -48,7 +69,7 @@ class PyImMod extends pyStruct{
     }
 }
 
-class PyImFrom extends pyStruct{
+class PyImFrom extends PyStruct{
     constructor(f, t, mod, xys) {
         super(f, t)
         this.mod = mod
@@ -68,7 +89,7 @@ class PyImFrom extends pyStruct{
     }
 }
 
-class pyDef extends pyStruct {
+class PyDef extends PyStruct {
     constructor(f, t, defName, args) {
         super(f, t)
         this.defName = defName
@@ -80,13 +101,79 @@ class pyDef extends pyStruct {
     }
 }
 
-class pyExpr extends pyStruct { // TODO, (instant value), apply, var, operExpr ...
+class PyClass extends PyStruct {
+    constructor(f, t, className, superClasses) {
+        super(f, t)
+        this.className = className
+        this.superClasses = superClasses
+    }
+
+    toString(){
+        return `class ${this.className}(${this.superClasses.join(', ')}):`
+    }
+}
+
+class pyIf extends PyStruct {
+    constructor(f, t, contents) {
+        super(f, t)
+        this.contents = contents
+    }
+
+    toString(){
+        return `if ...:`
+    }
+}
+
+class PyElif extends PyStruct {
+    constructor(f, t, contents) {
+        super(f, t)
+        this.contents = contents
+    }
+
+    toString(){
+        return `elif ...:`
+    }
+}
+
+class PyElse extends PyStruct {
+    constructor(f, t) {
+        super(f, t)
+    }
+
+    toString(){
+        return `else:`
+    }
+}
+
+class PyWhile extends PyStruct {
+    constructor(f, t, contents) {
+        super(f, t)
+        this.contents = contents
+    }
+
+    toString(){
+        return `while ${this.contents.toString()}:`
+    }
+}
+
+class pyFor extends PyStruct {
+    constructor(f, t, content) {
+        super(f, t)
+        this.content
+    }
+
+    toString(){
+        return `for (...}):`
+    }
+}
+
+class PyExpr extends PyStruct { // TODO, (instant value), apply, var, operExpr ...
     constructor(f, t){
         super(f, t)
     }
 }
 
-class pyApply extends pyExpr {
+class PyApply extends PyExpr {
     constructor(f, t, chainName, paras){
         super(f, t)
         this.chainName = chainName
@@ -98,7 +185,7 @@ class pyApply extends pyExpr {
     }
 }
 
-class pyChainVar extends pyExpr {
+class PyChainVar extends PyExpr {
     constructor(f, t, chainName){
         super(f, t)
         this.chainName = chainName
@@ -109,7 +196,7 @@ class pyChainVar extends pyExpr {
     }
 }
 
-class pyOther extends pyExpr { // consume invalid(currently) tokens
+class PyOther extends PyExpr { // consume invalid(currently) tokens
     constructor(f, t, tokenStr){
         super(f, t)
         this.tokenStr = tokenStr
@@ -126,12 +213,18 @@ class PyParser extends ParserBase {
         super('')
         this.textSrc = textSrc;
         this.src = (new PyToken(this.textSrc)).getTokens() //tokens as source
+        // info of every line
+        this.pyLines = []
+
+        // the top block struct
+        this.pyTopBlock = null
+
+        // construct parser 
         let q = this.q
         let all = q.all
         let any = q.any
         let not = q.not
-
-        this.pyLines = []
+        let until = this.until
 
         let w = (str) => q.make((idx) => {
             let v = this.src[idx]
@@ -139,8 +232,7 @@ class PyParser extends ParserBase {
                 return null
             if (v.tag == 'str') {
                 if(v.value === str){
-                    return [
-                        idx + 1,
+                    return [idx + 1,
                         v.value
                     ]    
                 }
@@ -160,6 +252,11 @@ class PyParser extends ParserBase {
                 }
                 return null
             }, `${t}`)
+
+        let pmargin = tag('margin')
+        pmargin.transform = (tok, f, t)=>{
+            return new PyMargin(f, t, tok.value)
+        }
 
         //import (x [as y])+ x [as y]
         let xy = q.all(tag('var'), q.zero_one(q.all(w('as'), tag('var'))));
@@ -192,7 +289,13 @@ class PyParser extends ParserBase {
         let pdef = q.all(w('def'), tag('var'), w('('), this.split(tag('var'), w(',')), w(')'), w(':'))
         this.pdef = pdef
         pdef.transform = ([_, defName, _1, args], f, t)=>{
-            return new pyDef(f, t, defName.value, args.map(arg=>arg.value))
+            return new PyDef(f, t, defName.value, args.map(arg=>arg.value))
+        }
+
+        // class C(S1, S2):
+        let pclass = q.all(w('class'), tag('var'), w('('), this.split(tag('var'), w(',')), w(')'), w(':'))
+        pclass.transform = ([_, className, _1, supClasseNames], f, t)=>{
+            return new PyClass(f, t, className.value, supClasseNames.map(arg=>arg.value))
         }
 
         //expressions
@@ -203,26 +306,57 @@ class PyParser extends ParserBase {
         pExpr.transform = ([eidx, v])=>{
             return v
         }
+        
+        let pif = all()
+        let pelif = all()
+        let pelse = all()
+        let pwhile = all()
+        let pfor = all()
+
+        pif.push(w('if'), until(w(':')), w(':'));
+        pif.transform = ([_, contents, _1], f, t)=>{
+            return new pyIf(f, t, contents)
+        }
+
+        pelif.push(w('elif'), until(w(':')), w(':'));
+        pelif.transform = ([_, contents, _1], f, t)=>{
+            return new PyElif(f, t, contents)
+        }
+
+        pelse.push(w('else'), w(':'));
+        pelse.transform = (v, f, t)=>{
+            return new PyElse(f, t)
+        }
+
+        pwhile.push(w('while'), until(w(':')), w(':'))
+        pwhile.transform = ([_, contents, _1], f, t)=>{
+            return new PyWhile(f, t, contents)
+        }
+
+        pfor.push(w('for'), until(w(':')), w(':'))
+        pfor.transform = ([_, content, _1], f, t)=>{
+            return new pyFor(f, t, content)
+        }
 
         // var `(  split(expr, ',' )                `)
         let paras = this.split(pExpr, w(','))
         papply.push(pChainVar, w('('), paras, w(')'))
         papply.transform = ([chainName, _, ps], f, t) => {
-            return new pyApply(f, t, chainName, ps)
+            return new PyApply(f, t, chainName, ps)
         }
 
         pChainVar.push(this.split(tag('var'), w('.')))
         pChainVar.transform = ([vs], f, t)=>{
-            return new pyChainVar(f, t, vs.map(v=>v.value))
+            return new PyChainVar(f, t, vs.map(v=>v.value))
         }
         
         // papply.transform = ([var_, l_, inners, r_])=>[var_, inners]
         pother.push(this.step, q.not(this.eof))
         pother.transform = (v, f, t)=>{
-            return new pyOther(f, t, this.src[f])
+            return new PyOther(f, t, this.src[f])
         }
 
-        let pexpression = q.any(pimport, pfrom, papply, pdef, tag('prefix'), pother)
+        let pexpression = q.any(pif, pelif, pelse, pfor, pwhile, pimport, pfrom, papply, pdef, pclass, pmargin, pother)
         this.pFile = q.many(pexpression)
     }
 
@@ -230,28 +364,82 @@ class PyParser extends ParserBase {
         let q = this.q
         let iters = q.query(this.pFile, 0)
         this.pyLines = iters.next().value[1].map(([eidx, v])=>v)
-        
-        let lines = this.pyLines
+        this.pyLines.unshift(new PyMargin(0, 0, ''));
+
+        let pyStructs = this.pyLines
         this.pyLines = []
-        let lastLine = null
-        for(let line of lines){
-            if(line instanceof pyOther){
-                if(lastLine instanceof pyOther){
+
+        // skip needless words (currently)
+        for(let struct of pyStructs){
+            if(!(struct instanceof PyOther)){
+                this.pyLines.push(struct)
+            }
+        }
+
+        // uniq the adjacent
+        pyStructs = this.pyLines
+        this.pyLines = []
+        let lastStruct = null
+        for(let struct of pyStructs){
+            if(struct instanceof PyMargin){
+                if(lastStruct instanceof PyMargin){
                     this.pyLines.pop()
-                    line.from = lastLine.from
-                    this.pyLines.push(line)
+                    struct.from = lastStruct.from
+                    this.pyLines.push(struct)
                 } else {
-                    this.pyLines.push(line)
+                    this.pyLines.push(struct)
                 }
             } 
             else {
-                this.pyLines.push(line)
+                this.pyLines.push(struct)
             }
-            lastLine = line
+            lastStruct = struct
         }
+        // scructs -> block
+        this.genBlocks()
         
-        util.inspect(this.pyLines)
-        //util.inspect(this.pyLines.map(line=>line.toString()))
+        util.inspect(this.pyLines.map(struct=>struct.toString()))
+        //util.inspect(this.pyTopBlock)
+    }
+
+    // construct blocks
+    genBlocks() {
+        let startMargin = this.pyLines[0].margin
+        let curBlock = new PyBlock(startMargin)
+        this.pyTopBlock = curBlock
+
+        let curLine = null
+
+        let blocks = []
+        for(let pyStruct of this.pyLines){
+            if(pyStruct instanceof PyMargin){
+                if(pyStruct.margin === curBlock.margin){
+                    curLine = new PyLine(curBlock)
+                    curBlock.push(curLine)
+                } else if(pyStruct.margin.length > curBlock.margin.length){
+                    let block = new PyBlock(pyStruct.margin)
+                    curLine.subBlock = block
+                    curBlock = block
+                    curLine = new PyLine(curBlock)
+                    curBlock.push(curLine)
+                } else if(pyStruct.margin.length < curBlock.margin.length){
+                    if(blocks.length == 0){
+                        console.error(`error syntax indentation of ${curBlock.margin.length}`)
+                        continue
+                    } else {
+                        if(curBlock.margin === curBlock.pyStruct.margin.length){
+                            curBlock = blocks.pop()
+                            curLine = new PyLine(curBlock)
+                            curBlock.push(curLine)
+                        } else {
+                            console.error(`error syntax indentation of ${pyStruct.margin.length}`)
+                        }
+                    }
+                }
+            } else {
+                curLine.setStruct(pyStruct)
+            }
+        }
     }
 }
 

@@ -87,16 +87,16 @@ class PyToken extends ParserBase {
         t.tSingleComment = all(w(`#`), line);
         t.tSingleComment.transform = (v, f, t)=> new tokenStruct('comment', f, t)
 
-        // space or prefix space
-        t.tprefix = t.blanks()
-        t.tprefix.transform = (bs, f, t) => {
+        // space or margin space
+        t.tmargin = t.blanks()
+        t.tmargin.transform = (bs, f, t) => {
             let last = bs.lastIndexOf('\n')
             // util.inspect(`------------------bs:${bs}=${bs.length}, last:${last}`)
             if(last == -1){ // single line
-                if(f == 0) return new tokenStruct('prefix', f, t, bs)
+                if(f == 0) return new tokenStruct('margin', f, t, bs)
                 else return new tokenStruct('space', f, t, bs)
             } else {
-                return new tokenStruct('prefix', f, t, bs.slice(last+1))
+                return new tokenStruct('margin', f, t, bs.slice(last+1))
             }
         }
         
@@ -105,8 +105,8 @@ class PyToken extends ParserBase {
         t.tSkip.transform = (s, f, t)=> new tokenStruct('skip', f, t)
 
         
-        t.tokens = any(t.tprefix, 
-            w('('), w(')'), w(','), w('.'), w(':'), w('*'), k('def'), 
+        t.tokens = any(t.tmargin, 
+            w('('), w(')'), w(','), w('.'), w(':'), w('*'), k('if'), k('elif'), k('else'), k('while'), k('for'), k('def'),k('class'),
             t.tSingleComment, k('as'), k('import'), k('from'), 
             t.tvar, t.tMultiComment, t.tSkip);
     }
@@ -114,7 +114,9 @@ class PyToken extends ParserBase {
     getTokens() {
         let q = this.q
         let iters = q.query(q.many(this.tokens), 0)
-        // filter no used words
+        
+        
+        // skip needless words (currently)
         let tokens = iters.next().value[1].map(([eidx, v])=>v)
         tokens = tokens.filter(t=>{
             if(t instanceof tokenStruct){
@@ -125,15 +127,16 @@ class PyToken extends ParserBase {
             } 
             return true
         })
-
-        // skip no used words (currently)
+        
         let lastToken = null
         let tokens1 = tokens
         tokens = []
+
+        // uniq the adjacent
         for(let t of tokens1){
             if(t instanceof tokenStruct){
                 if(lastToken instanceof tokenStruct){
-                    if(t.tag == "prefix" && lastToken.tag == "prefix"){
+                    if(t.tag == "margin" && lastToken.tag == "margin"){
                         tokens.pop()
                         tokens.push(t)    
                     } else if(t.tag == "skip" && lastToken.tag == "skip"){

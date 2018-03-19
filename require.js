@@ -35,7 +35,7 @@ var requirejs, require, define;
         globalDefQueue = [],
         useInteractive = false;
 
-    //Could match something like ')//comment', do not lose the prefix to comment.
+    //Could match something like ')//comment', do not lose the margin to comment.
     function commentReplace(match, singlePrefix) {
         return singlePrefix || '';
     }
@@ -387,19 +387,19 @@ var requirejs, require, define;
 
         //Turns a plugin!resource to [plugin, resource]
         //with the plugin being undefined if the name
-        //did not have a plugin prefix.
+        //did not have a plugin margin.
         function splitPrefix(name) {
-            var prefix,
+            var margin,
                 index = name ? name.indexOf('!') : -1;
             if (index > -1) {
-                prefix = name.substring(0, index);
+                margin = name.substring(0, index);
                 name = name.substring(index + 1, name.length);
             }
-            return [prefix, name];
+            return [margin, name];
         }
 
         /**
-         * Creates a module mapping that includes plugin prefix, module
+         * Creates a module mapping that includes plugin margin, module
          * name, and path. If parentModuleMap is provided it will
          * also normalize the name via require.normalize()
          *
@@ -415,7 +415,7 @@ var requirejs, require, define;
          */
         function makeModuleMap(name, parentModuleMap, isNormalized, applyMap) {
             var url, pluginModule, suffix, nameParts,
-                prefix = null,
+                margin = null,
                 parentName = parentModuleMap ? parentModuleMap.name : null,
                 originalName = name,
                 isDefine = true,
@@ -429,17 +429,17 @@ var requirejs, require, define;
             }
 
             nameParts = splitPrefix(name);
-            prefix = nameParts[0];
+            margin = nameParts[0];
             name = nameParts[1];
 
-            if (prefix) {
-                prefix = normalize(prefix, parentName, applyMap);
-                pluginModule = getOwn(defined, prefix);
+            if (margin) {
+                margin = normalize(margin, parentName, applyMap);
+                pluginModule = getOwn(defined, margin);
             }
 
             //Account for relative paths if there is a base name.
             if (name) {
-                if (prefix) {
+                if (margin) {
                     if (isNormalized) {
                         normalizedName = name;
                     } else if (pluginModule && pluginModule.normalize) {
@@ -467,7 +467,7 @@ var requirejs, require, define;
                     //application in normalize. The map config values must
                     //already be normalized, so do not need to redo that part.
                     nameParts = splitPrefix(normalizedName);
-                    prefix = nameParts[0];
+                    margin = nameParts[0];
                     normalizedName = nameParts[1];
                     isNormalized = true;
 
@@ -478,20 +478,20 @@ var requirejs, require, define;
             //If the id is a plugin id that cannot be determined if it needs
             //normalization, stamp it with a unique ID so two matching relative
             //ids that may conflict can be separate.
-            suffix = prefix && !pluginModule && !isNormalized ?
+            suffix = margin && !pluginModule && !isNormalized ?
                      '_unnormalized' + (unnormalizedCounter += 1) :
                      '';
 
             return {
-                prefix: prefix,
+                margin: margin,
                 name: normalizedName,
                 parentMap: parentModuleMap,
                 unnormalized: !!suffix,
                 url: url,
                 originalName: originalName,
                 isDefine: isDefine,
-                id: (prefix ?
-                        prefix + '!' + normalizedName :
+                id: (margin ?
+                        margin + '!' + normalizedName :
                         normalizedName) + suffix
             };
         }
@@ -681,7 +681,7 @@ var requirejs, require, define;
                         }
                     } else if (!mod.inited && mod.fetched && map.isDefine) {
                         stillLoading = true;
-                        if (!map.prefix) {
+                        if (!map.margin) {
                             //No reason to keep looking for unfinished
                             //loading. If the only stillLoading is a
                             //plugin resource though, keep going,
@@ -817,11 +817,11 @@ var requirejs, require, define;
                     context.makeRequire(this.map, {
                         enableBuildCallback: true
                     })(this.shim.deps || [], bind(this, function () {
-                        return map.prefix ? this.callPlugin() : this.load();
+                        return map.margin ? this.callPlugin() : this.load();
                     }));
                 } else {
                     //Regular dependency.
-                    return map.prefix ? this.callPlugin() : this.load();
+                    return map.margin ? this.callPlugin() : this.load();
                 }
             },
 
@@ -945,8 +945,8 @@ var requirejs, require, define;
             callPlugin: function () {
                 var map = this.map,
                     id = map.id,
-                    //Map already normalized the prefix.
-                    pluginMap = makeModuleMap(map.prefix);
+                    //Map already normalized the margin.
+                    pluginMap = makeModuleMap(map.margin);
 
                 //Mark this as a dependency for this plugin, so it
                 //can be traced for cycles.
@@ -971,9 +971,9 @@ var requirejs, require, define;
                             }) || '';
                         }
 
-                        //prefix and name should already be normalized, no need
+                        //margin and name should already be normalized, no need
                         //for applying map config again either.
-                        normalizedMap = makeModuleMap(map.prefix + '!' + name,
+                        normalizedMap = makeModuleMap(map.margin + '!' + name,
                                                       this.map.parentMap,
                                                       true);
                         on(normalizedMap,
