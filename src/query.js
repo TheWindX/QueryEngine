@@ -339,7 +339,7 @@ class IFactAllIter extends IFactIter {
                 } else {
                     return [
                         st,
-                        [...this.values]
+                        this.values
                     ]
                 }
             }
@@ -529,7 +529,7 @@ function * query(fact, st, isRec = (st, st1) => st <= st1) {
         if (fact instanceof IFactPred){
             let stVal = fact.run(st)
             if(stVal) {
-                yield stVal
+                return stVal
             }
             return
         }
@@ -637,11 +637,11 @@ const cut = make((st) => [
 const many = (f) => {
     let fall = any()
     let fpath1 = all(f, fall)
-    fpath1.transform = ([v, vs]) => {
-        let r = [
-            v, ...vs
-        ]
-        return r
+    fpath1.transform = (vvs) => {
+        let v = vvs[0]
+        let vs = vvs[1]
+        vs.unshift(v)
+        return vs
     }
     let fpath2 = ok
     fall.push(fpath1, fpath2)
@@ -660,10 +660,11 @@ const many_one = (f) => {
     let f1 = f
     let f2 = many(f)
     let fall = all(f1, f2)
-    fall.transform = ([v, vs]) => {
-        return [
-            v, ...vs
-        ]
+    fall.transform = (vvs) => {
+        let v = vvs[0]
+        let vs = vvs[1]
+        vs.unshift(v)
+        return vs
     }
     return fall
 }

@@ -413,7 +413,7 @@ class PyParser extends ParserBase {
         
         //util.inspect(this.pyLines.map(struct=>struct.toString()))
 
-        //console.log(this.pyTopBlock.toString(0))
+        console.log(this.pyTopBlock.toString(0))
         //util.inspect(this.pyTopBlock)
     }
 

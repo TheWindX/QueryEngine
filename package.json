@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node test",
+    "prof": "node --prof test",
     "python": "node \"src/pyToken.js\""
   },
   "author": "",

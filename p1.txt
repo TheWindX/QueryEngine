@@ -1,0 +1,436 @@
+Statistical profiling result from isolate-0000019C7D3409A0-v8.log, (312 ticks, 5 unaccounted, 0 excluded).
+
+ [Shared libraries]:
+   ticks  total  nonlib   name
+    132   42.3%          C:\Program Files\nodejs\node.exe
+     63   20.2%          C:\WINDOWS\SYSTEM32\ntdll.dll
+      6    1.9%          C:\WINDOWS\System32\KERNEL32.DLL
+      1    0.3%          C:\WINDOWS\System32\KERNELBASE.dll
+
+ [JavaScript]:
+   ticks  total  nonlib   name
+     16    5.1%   14.5%  LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+     11    3.5%   10.0%  LazyCompile: *set native collection.js:149:4
+     11    3.5%   10.0%  LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:293:9
+      9    2.9%    8.2%  Stub: GetPropertyStub
+      8    2.6%    7.3%  Builtin: FunctionPrototypeHasInstance
+      5    1.6%    4.5%  Builtin: InterpreterEntryTrampoline
+      4    1.3%    3.6%  Builtin: InstanceOf
+      2    0.6%    1.8%  KeyedStoreIC: A keyed store IC from the snapshot
+      2    0.6%    1.8%  KeyedLoadIC: A keyed load IC from the snapshot
+      2    0.6%    1.8%  Handler: An IC handler from the snapshot
+      2    0.6%    1.8%  Function: ~run C:\work\SDK\git\QueryEngine\src\query.js:171:8
+      2    0.6%    1.8%  Function: ~q.make C:\work\SDK\git\QueryEngine\src\pyParser.js:242:33
+      2    0.6%    1.8%  Builtin: RegExpPrototypeTest
+      2    0.6%    1.8%  Builtin: GrowFastSmiOrObjectElements
+      2    0.6%    1.8%  Builtin: CallFunction_ReceiverIsAny
+      1    0.3%    0.9%  Stub: CallICStub
+      1    0.3%    0.9%  Stub: CEntryStub
+      1    0.3%    0.9%  StoreIC: A store IC from the snapshot
+      1    0.3%    0.9%  LazyCompile: *trys.map C:\work\SDK\git\QueryEngine\src\query.js:690:29
+      1    0.3%    0.9%  LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      1    0.3%    0.9%  LazyCompile: *fall.transform C:\work\SDK\git\QueryEngine\src\query.js:648:22
+      1    0.3%    0.9%  LazyCompile: *delete native collection.js:187:7
+      1    0.3%    0.9%  Function: ~set C:\work\SDK\git\QueryEngine\src\query.js:20:8
+      1    0.3%    0.9%  Function: ~q.make C:\work\SDK\git\QueryEngine\src\pyParser.js:256:33
+      1    0.3%    0.9%  Function: ~q.make C:\work\SDK\git\QueryEngine\src\parserBase.js:27:36
+      1    0.3%    0.9%  Function: ~iters.next.value.map C:\work\SDK\git\QueryEngine\src\pyToken.js:120:48
+      1    0.3%    0.9%  Function: ~isRec C:\work\SDK\git\QueryEngine\src\query.js:523:36
+      1    0.3%    0.9%  Function: ~get transform C:\work\SDK\git\QueryEngine\src\query.js:62:18
+      1    0.3%    0.9%  Function: ~get C:\work\SDK\git\QueryEngine\src\query.js:34:8
+      1    0.3%    0.9%  Function: ~PyParser.pif.transform C:\work\SDK\git\QueryEngine\src\pyParser.js:330:25
+      1    0.3%    0.9%  Function: ~IFactAll.facts.forEach.f C:\work\SDK\git\QueryEngine\src\query.js:372:23
+      1    0.3%    0.9%  Function: ~HashToEntry native collection.js:16:21
+      1    0.3%    0.9%  Builtin: ToString
+      1    0.3%    0.9%  Builtin: StrictEqual
+      1    0.3%    0.9%  Builtin: MapLookupHashIndex
+      1    0.3%    0.9%  Builtin: LessThanOrEqual
+      1    0.3%    0.9%  Builtin: JSConstructStubGenericUnrestrictedReturn
+      1    0.3%    0.9%  Builtin: FastNewObject
+      1    0.3%    0.9%  Builtin: Call_ReceiverIsNotNullOrUndefined
+      1    0.3%    0.9%  Builtin: CallFunction_ReceiverIsNotNullOrUndefined
+
+ [C++]:
+   ticks  total  nonlib   name
+
+ [Summary]:
+   ticks  total  nonlib   name
+    105   33.7%   95.5%  JavaScript
+      0    0.0%    0.0%  C++
+     36   11.5%   32.7%  GC
+    202   64.7%          Shared libraries
+      5    1.6%          Unaccounted
+
+ [C++ entry points]:
+   ticks    cpp   total   name
+
+ [Bottom up (heavy) profile]:
+  Note: percentage shows a share of a particular caller in the total
+  amount of its parent calls.
+  Callers occupying less than 1.0% are not shown.
+
+   ticks parent  name
+    132   42.3%  C:\Program Files\nodejs\node.exe
+     90   68.2%    C:\Program Files\nodejs\node.exe
+     21   23.3%      Function: ~runInThisContext bootstrap_node.js:495:28
+     21  100.0%        Function: ~NativeModule.compile bootstrap_node.js:584:44
+     21  100.0%          Function: ~NativeModule.require bootstrap_node.js:516:34
+      4   19.0%            Function: ~<anonymous> module.js:1:11
+      3   14.3%            Function: ~<anonymous> tty.js:1:11
+      3   14.3%            Function: ~<anonymous> internal/loader/ModuleRequest.js:1:11
+      2    9.5%            Function: ~<anonymous> stream.js:1:11
+      2    9.5%            Function: ~<anonymous> internal/loader/Loader.js:1:11
+      1    4.8%            Function: ~setupNextTick internal/process/next_tick.js:49:23
+      1    4.8%            Function: ~setupGlobalVariables bootstrap_node.js:251:32
+      1    4.8%            Function: ~setupGlobalConsole bootstrap_node.js:306:30
+      1    4.8%            Function: ~<anonymous> timers.js:1:11
+      1    4.8%            Function: ~<anonymous> net.js:1:11
+      1    4.8%            Function: ~<anonymous> internal/encoding.js:1:11
+      1    4.8%            Function: ~<anonymous> fs.js:1:11
+     11   12.2%      Function: ~Resolver dns.js:248:14
+     11  100.0%        Function: ~<anonymous> dns.js:1:11
+     11  100.0%          Function: ~NativeModule.compile bootstrap_node.js:584:44
+     11  100.0%            Function: ~NativeModule.require bootstrap_node.js:516:34
+      9   10.0%      Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      9  100.0%        Builtin: GeneratorPrototypeNext
+      7   77.8%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      7  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      2   22.2%          Function: ~test C:\work\SDK\git\QueryEngine\test\testParser.js:34:20
+      2  100.0%            Function: ~run C:\work\SDK\git\QueryEngine\test\testParser.js:12:8
+      6    6.7%      Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      6  100.0%        Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      6  100.0%          Function: ~Module._compile module.js:569:37
+      6  100.0%            Function: ~Module._extensions..js module.js:621:37
+      4    4.4%      LazyCompile: *set native collection.js:149:4
+      4  100.0%        LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      4  100.0%          Builtin: GeneratorPrototypeNext
+      3   75.0%            Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1   25.0%            Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      4    4.4%      Function: ~q.make C:\work\SDK\git\QueryEngine\src\parserBase.js:38:27
+      4  100.0%        LazyCompile: *run C:\work\SDK\git\QueryEngine\src\query.js:171:8
+      4  100.0%          LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:293:9
+      4  100.0%            LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      3    3.3%      Function: ~createScript vm.js:79:22
+      3  100.0%        Function: ~runInThisContext vm.js:138:26
+      3  100.0%          Function: ~Module._compile module.js:569:37
+      3  100.0%            Function: ~Module._extensions..js module.js:621:37
+      2    2.2%      LazyCompile: *PyToken.t.tmargin.transform C:\work\SDK\git\QueryEngine\src\pyToken.js:92:31
+      2  100.0%        LazyCompile: *run C:\work\SDK\git\QueryEngine\src\query.js:171:8
+      2  100.0%          LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      2  100.0%            LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      2    2.2%      Function: ~run C:\work\SDK\git\QueryEngine\src\query.js:171:8
+      1   50.0%        Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%          Builtin: GeneratorPrototypeNext
+      1  100.0%            Function: ~test C:\work\SDK\git\QueryEngine\test\testParser.js:34:20
+      1   50.0%        Function: ~next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      1  100.0%          Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%            Builtin: GeneratorPrototypeNext
+      2    2.2%      Function: ~delete C:\work\SDK\git\QueryEngine\src\query.js:44:11
+      2  100.0%        Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      2  100.0%          Builtin: GeneratorPrototypeNext
+      2  100.0%            Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      2    2.2%      Function: ~createWriteReq net.js:792:24
+      2  100.0%        Function: ~Socket._writeGeneric net.js:711:42
+      2  100.0%          Function: ~Socket._write net.js:788:35
+      2  100.0%            Function: ~doWrite _stream_writable.js:379:17
+      1    1.1%      LazyCompile: *r.transform C:\work\SDK\git\QueryEngine\src\parserBase.js:163:27
+      1  100.0%        LazyCompile: *_transform C:\work\SDK\git\QueryEngine\src\query.js:70:31
+      1  100.0%          LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%            Builtin: GeneratorPrototypeNext
+      1    1.1%      LazyCompile: *q.make C:\work\SDK\git\QueryEngine\src\parserBase.js:38:27
+      1  100.0%        LazyCompile: *run C:\work\SDK\git\QueryEngine\src\query.js:171:8
+      1  100.0%          LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:293:9
+      1  100.0%            LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1    1.1%      Function: ~toRealPath module.js:153:20
+      1  100.0%        Function: ~tryFile module.js:145:17
+      1  100.0%          Function: ~tryExtensions module.js:160:23
+      1  100.0%            Function: ~Module._findPath module.js:172:28
+      1    1.1%      Function: ~startup bootstrap_node.js:12:19
+      1  100.0%        Function: ~<anonymous> bootstrap_node.js:10:10
+      1    1.1%      Function: ~set native collection.js:149:4
+      1  100.0%        Function: ~set C:\work\SDK\git\QueryEngine\src\query.js:20:8
+      1  100.0%          Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%            Builtin: GeneratorPrototypeNext
+      1    1.1%      Function: ~q.make C:\work\SDK\git\QueryEngine\src\pyToken.js:52:28
+      1  100.0%        LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      1  100.0%          LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%            Builtin: GeneratorPrototypeNext
+      1    1.1%      Function: ~makeSafe internal/safe_globals.js:15:18
+      1  100.0%        Function: ~<anonymous> internal/safe_globals.js:1:11
+      1  100.0%          Function: ~NativeModule.compile bootstrap_node.js:584:44
+      1  100.0%            Function: ~NativeModule.require bootstrap_node.js:516:34
+      1    1.1%      Function: ~log console.js:124:37
+      1  100.0%        C:\Program Files\nodejs\node.exe
+      1  100.0%          Function: ~run C:\work\SDK\git\QueryEngine\test\testParser.js:12:8
+      1  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testParser.js:1:11
+      1    1.1%      Function: ~init C:\work\SDK\git\QueryEngine\src\parserBase.js:12:9
+      1  100.0%        Function: ~PaserBase C:\work\SDK\git\QueryEngine\src\parserBase.js:7:16
+      1  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1    1.1%      Function: ~fs.closeSync fs.js:613:24
+      1  100.0%        Function: ~fs.readFileSync fs.js:550:27
+      1  100.0%          Function: ~Module._extensions..js module.js:621:37
+      1  100.0%            Function: ~Module.load module.js:522:33
+      1    1.1%      Function: ~createWritableStdioStream internal/process/stdio.js:142:35
+      1  100.0%        Function: ~getStdout internal/process/stdio.js:12:21
+      1  100.0%          Function: ~<anonymous> console.js:1:11
+      1  100.0%            Function: ~NativeModule.compile bootstrap_node.js:584:44
+      1    1.1%      Function: ~_transform C:\work\SDK\git\QueryEngine\src\query.js:70:31
+      1  100.0%        LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%          Builtin: GeneratorPrototypeNext
+      1  100.0%            Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      1    1.1%      Function: ~_tickCallback internal/process/next_tick.js:151:25
+      1  100.0%        Function: ~Module.runMain module.js:651:26
+      1  100.0%          Function: ~startup bootstrap_node.js:12:19
+      1  100.0%            Function: ~<anonymous> bootstrap_node.js:10:10
+      1    1.1%      Function: ~PyToken C:\work\SDK\git\QueryEngine\src\pyToken.js:22:16
+      1  100.0%        Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1  100.0%          Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1  100.0%            Function: ~Module._compile module.js:569:37
+      1    1.1%      Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1  100.0%        Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1  100.0%          Function: ~Module._compile module.js:569:37
+      1  100.0%            Function: ~Module._extensions..js module.js:621:37
+      1    1.1%      Function: ~PyOther C:\work\SDK\git\QueryEngine\src\pyParser.js:213:16
+      1  100.0%        Function: ~PyParser.pother.transform C:\work\SDK\git\QueryEngine\src\pyParser.js:368:28
+      1  100.0%          LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%            Builtin: GeneratorPrototypeNext
+      1    1.1%      Function: ~PerformanceObserverEntryList perf_hooks.js:186:14
+      1  100.0%        Function: ~Performance perf_hooks.js:316:14
+      1  100.0%          Function: ~<anonymous> perf_hooks.js:1:11
+      1  100.0%            Function: ~NativeModule.compile bootstrap_node.js:584:44
+      1    1.1%      Function: ~Module._resolveFilename module.js:503:35
+      1  100.0%        Function: ~Module._load module.js:438:24
+      1  100.0%          Function: ~Module.runMain module.js:651:26
+      1  100.0%            Function: ~startup bootstrap_node.js:12:19
+      1    1.1%      Function: ~Module._load module.js:438:24
+      1  100.0%        Function: ~Module.runMain module.js:651:26
+      1  100.0%          Function: ~startup bootstrap_node.js:12:19
+      1  100.0%            Function: ~<anonymous> bootstrap_node.js:10:10
+      1    1.1%      Function: ~<anonymous> readline.js:1:11
+      1  100.0%        Function: ~NativeModule.compile bootstrap_node.js:584:44
+      1  100.0%          Function: ~NativeModule.require bootstrap_node.js:516:34
+      1  100.0%            Function: ~<anonymous> tty.js:1:11
+      1    1.1%      Function: ~<anonymous> internal/loader/Loader.js:1:11
+      1  100.0%        Function: ~NativeModule.compile bootstrap_node.js:584:44
+      1  100.0%          Function: ~NativeModule.require bootstrap_node.js:516:34
+      1  100.0%            Function: ~<anonymous> module.js:1:11
+      1    1.1%      Function: ~<anonymous> fs.js:1:11
+      1  100.0%        Function: ~NativeModule.compile bootstrap_node.js:584:44
+      1  100.0%          Function: ~NativeModule.require bootstrap_node.js:516:34
+      1  100.0%            Function: ~<anonymous> module.js:1:11
+      1    1.1%      Function: ~<anonymous> bootstrap_node.js:10:10
+      1    1.1%      Builtin: ArrayMap
+      1  100.0%        Function: ~f.transform C:\work\SDK\git\QueryEngine\src\query.js:683:19
+      1  100.0%          Function: ~_transform C:\work\SDK\git\QueryEngine\src\query.js:70:31
+      1  100.0%            LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+
+     63   20.2%  C:\WINDOWS\SYSTEM32\ntdll.dll
+     16   25.4%    C:\Program Files\nodejs\node.exe
+      1    6.3%      LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%        Builtin: GeneratorPrototypeNext
+      1  100.0%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1    6.3%      LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:293:9
+      1  100.0%        LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%          Builtin: GeneratorPrototypeNext
+      1  100.0%            Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1    6.3%      LazyCompile: *isRec C:\work\SDK\git\QueryEngine\src\query.js:523:36
+      1  100.0%        LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%          Builtin: GeneratorPrototypeNext
+      1  100.0%            Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1    6.3%      LazyCompile: *delete native collection.js:187:7
+      1  100.0%        LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%          Builtin: GeneratorPrototypeNext
+      1  100.0%            Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1    6.3%      Function: ~tokenStruct C:\work\SDK\git\QueryEngine\src\pyToken.js:8:16
+      1  100.0%        Function: ~PyToken.t.tmargin.transform C:\work\SDK\git\QueryEngine\src\pyToken.js:92:31
+      1  100.0%          Function: ~run C:\work\SDK\git\QueryEngine\src\query.js:171:8
+      1  100.0%            Function: ~next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      1    6.3%      Function: ~run C:\work\SDK\git\QueryEngine\test\testParser.js:12:8
+      1  100.0%        Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testParser.js:1:11
+      1  100.0%          Function: ~Module._compile module.js:569:37
+      1  100.0%            Function: ~Module._extensions..js module.js:621:37
+      1    6.3%      Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%        Builtin: GeneratorPrototypeNext
+      1  100.0%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1    6.3%      Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      1  100.0%        Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1  100.0%          Function: ~Module._compile module.js:569:37
+      1  100.0%            Function: ~Module._extensions..js module.js:621:37
+      1    6.3%      Function: ~join native array.js:288:46
+      1  100.0%        Function: ~setupConfig internal/process.js:113:21
+      1  100.0%          Function: ~startup bootstrap_node.js:12:19
+      1  100.0%            Function: ~<anonymous> bootstrap_node.js:10:10
+      1    6.3%      Function: ~fs.openSync fs.js:644:23
+      1  100.0%        Function: ~fs.readFileSync fs.js:550:27
+      1  100.0%          Function: ~Module._extensions..js module.js:621:37
+      1  100.0%            Function: ~Module.load module.js:522:33
+      1    6.3%      Function: ~emit events.js:155:44
+      1  100.0%        Function: ~_addListener events.js:232:22
+      1  100.0%          Function: ~addListener events.js:295:58
+      1  100.0%            Function: ~setupSignalHandlers internal/process.js:190:29
+      1    6.3%      Function: ~_transform C:\work\SDK\git\QueryEngine\src\query.js:70:31
+      1  100.0%        LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%          Builtin: GeneratorPrototypeNext
+      1  100.0%            Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      1    6.3%      Function: ~Socket net.js:178:16
+      1  100.0%        Function: ~WriteStream tty.js:67:21
+      1  100.0%          Function: ~createWritableStdioStream internal/process/stdio.js:142:35
+      1  100.0%            Function: ~getStdout internal/process/stdio.js:12:21
+      1    6.3%      Function: ~E internal/errors.js:118:11
+      1  100.0%        Function: ~<anonymous> internal/errors.js:1:11
+      1  100.0%          Function: ~NativeModule.compile bootstrap_node.js:584:44
+      1  100.0%            Function: ~NativeModule.require bootstrap_node.js:516:34
+      1    6.3%      Function: ~<anonymous> buffer.js:1:11
+      1  100.0%        Function: ~NativeModule.compile bootstrap_node.js:584:44
+      1  100.0%          Function: ~NativeModule.require bootstrap_node.js:516:34
+      1  100.0%            Function: ~<anonymous> util.js:1:11
+      1    6.3%      Builtin: ArrayMap
+      1  100.0%        Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+
+     16    5.1%  LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+     16  100.0%    Builtin: GeneratorPrototypeNext
+      9   56.3%      Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      9  100.0%        Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      9  100.0%          Function: ~Module._compile module.js:569:37
+      9  100.0%            Function: ~Module._extensions..js module.js:621:37
+      7   43.8%      Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      7  100.0%        Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      7  100.0%          Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      7  100.0%            Function: ~Module._compile module.js:569:37
+
+     11    3.5%  LazyCompile: *set native collection.js:149:4
+     10   90.9%    LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+     10  100.0%      Builtin: GeneratorPrototypeNext
+      7   70.0%        Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      7  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      7  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      3   30.0%        Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      3  100.0%          Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      3  100.0%            Function: ~Module._compile module.js:569:37
+      1    9.1%    Function: ~set C:\work\SDK\git\QueryEngine\src\query.js:20:8
+      1  100.0%      Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%        Builtin: GeneratorPrototypeNext
+      1  100.0%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+
+     11    3.5%  LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:293:9
+     11  100.0%    LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+     11  100.0%      Builtin: GeneratorPrototypeNext
+      7   63.6%        Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      7  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      7  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      4   36.4%        Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      4  100.0%          Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      4  100.0%            Function: ~Module._compile module.js:569:37
+
+      9    2.9%  Stub: GetPropertyStub
+      4   44.4%    LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      4  100.0%      Builtin: GeneratorPrototypeNext
+      2   50.0%        Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      2  100.0%          Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      2  100.0%            Function: ~Module._compile module.js:569:37
+      2   50.0%        Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      2  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      2  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      2   22.2%    LazyCompile: *run C:\work\SDK\git\QueryEngine\src\query.js:171:8
+      2  100.0%      LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      2  100.0%        LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      2  100.0%          Builtin: GeneratorPrototypeNext
+      1   50.0%            Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      1   50.0%            Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      2   22.2%    LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:293:9
+      2  100.0%      LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      2  100.0%        Builtin: GeneratorPrototypeNext
+      2  100.0%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      2  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1   11.1%    LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      1  100.0%      LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%        Builtin: GeneratorPrototypeNext
+      1  100.0%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+
+      8    2.6%  Builtin: FunctionPrototypeHasInstance
+      2   25.0%    LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      2  100.0%      Builtin: GeneratorPrototypeNext
+      1   50.0%        Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      1  100.0%          Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1  100.0%            Function: ~Module._compile module.js:569:37
+      1   50.0%        Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      2   25.0%    LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:293:9
+      2  100.0%      LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      2  100.0%        Builtin: GeneratorPrototypeNext
+      1   50.0%          Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      1  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1   50.0%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      2   25.0%    Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      2  100.0%      Builtin: GeneratorPrototypeNext
+      2  100.0%        Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      2  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      2  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1   12.5%    LazyCompile: *tokens.filter.t C:\work\SDK\git\QueryEngine\src\pyToken.js:121:32
+      1  100.0%      Builtin: ArrayFilter
+      1  100.0%        Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1   12.5%    Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      1  100.0%      Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1  100.0%        Function: ~Module._compile module.js:569:37
+      1  100.0%          Function: ~Module._extensions..js module.js:621:37
+      1  100.0%            Function: ~Module.load module.js:522:33
+
+      6    1.9%  C:\WINDOWS\System32\KERNEL32.DLL
+
+      5    1.6%  UNKNOWN
+
+      5    1.6%  Builtin: InterpreterEntryTrampoline
+      1   20.0%    LazyCompile: *run C:\work\SDK\git\QueryEngine\src\query.js:171:8
+      1  100.0%      LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      1  100.0%        LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%          Builtin: GeneratorPrototypeNext
+      1  100.0%            Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1   20.0%    LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%      Builtin: GeneratorPrototypeNext
+      1  100.0%        Function: ~parse C:\work\SDK\git\QueryEngine\src\pyParser.js:376:10
+      1  100.0%          Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1  100.0%            Function: ~Module._compile module.js:569:37
+      1   20.0%    Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%      Builtin: GeneratorPrototypeNext
+      1  100.0%        Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1   20.0%    Function: ~next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      1  100.0%      Function: ~query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%        Builtin: GeneratorPrototypeNext
+      1  100.0%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1   20.0%    Builtin: ArrayMap
+      1  100.0%      Function: ~f.transform C:\work\SDK\git\QueryEngine\src\query.js:683:19
+      1  100.0%        Function: ~_transform C:\work\SDK\git\QueryEngine\src\query.js:70:31
+      1  100.0%          LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%            Builtin: GeneratorPrototypeNext
+
+      4    1.3%  Builtin: InstanceOf
+      2   50.0%    LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      2  100.0%      Builtin: GeneratorPrototypeNext
+      2  100.0%        Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      2  100.0%          Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      2  100.0%            Function: ~<anonymous> C:\work\SDK\git\QueryEngine\test\testPython.js:1:11
+      1   25.0%    LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:293:9
+      1  100.0%      LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%        Builtin: GeneratorPrototypeNext
+      1  100.0%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+      1   25.0%    LazyCompile: *next C:\work\SDK\git\QueryEngine\src\query.js:198:9
+      1  100.0%      LazyCompile: *query C:\work\SDK\git\QueryEngine\src\query.js:523:17
+      1  100.0%        Builtin: GeneratorPrototypeNext
+      1  100.0%          Function: ~getTokens C:\work\SDK\git\QueryEngine\src\pyToken.js:114:14
+      1  100.0%            Function: ~PyParser C:\work\SDK\git\QueryEngine\src\pyParser.js:225:16
+
