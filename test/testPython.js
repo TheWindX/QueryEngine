@@ -3,9 +3,10 @@ let util = require('../src/util')
 let dataPython = require('./dataPython')
 let PyParser = require('../src/pyParser')
 
-let parser = (new PyParser(dataPython.data1));
-
-parser.parse()
+for(let i = 0; i<10; ++i){
+    let parser = (new PyParser(dataPython.data1));
+    parser.parse()
+}
 
 
 console.log('----------------------------------------------pass test python')

@@ -453,7 +453,7 @@ function * query(fact, st, isRec = (st, st1) => st <= st1) {
                 let st1 = factID2St.get(r.fact.id)
                 let bRec = isRec(r.st, st1)
                 if (bRec) {
-                    console.warn('left recursive')
+                    //console.warn('left recursive')
                     iter.gain(null)
                 } else {
                     factID2St.set(r.fact.id, r.st)
@@ -627,8 +627,6 @@ const log = (msg) => make(st => {
     console.log(`${msg1}`)
     return [st, null]
 });
-
-
 
 let debugRec = false
 let debugStk = false

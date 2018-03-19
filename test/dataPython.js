@@ -4,8 +4,11 @@ data1 = `  import x as x1, y as y1, z`
 data1 = `import x as x1, y as y1, z
  import x as x1, y as y1, z`
 
-data1 = `""" """
-from m1 import x1 as x11, y1 as y11, z1`
+data2 = `
+from m1 import x1 as x11, y1 as y11, z1
+    from m1 import x1 as x11, y1 as y11, z1
+        from m1 import x1 as x11, y1 as y11, z1
+    from m1 import x1 as x11, y1 as y11, z1`
 
 
 let data1Back = `# importing the modules #1

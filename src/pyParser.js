@@ -4,24 +4,37 @@ const ParserBase = require('./parserBase')
 const PyToken = require('./pyToken')
 
 class PyBlock {
-    constructor(margin){
+    constructor(margin, supLine){
         this.margin = margin
+        this.supLine = supLine
         this.pyLines = []
     }
 
     push(pyLine) {
         this.pyLines.push(pyLine)
     }
+
+    toString(n){
+        return this.pyLines.map(line=>line.toString(n)).join('\n')
+    }
 }
 
 class PyLine {
-    constructor(parentBlock){
-        this.parentBlock = parentBlock
+    constructor(supBlock){
+        this.supBlock = supBlock
         this.subBlock = null
     }
 
     setStruct(pyStruct){
         this.pyStruct = pyStruct
+    }
+
+    toString(n){
+        let r = ' '.repeat(n)+this.pyStruct.toString()+'\n'
+        if(this.subBlock){
+            r += this.subBlock.toString(n+2)
+        }
+        return r
     }
 }
 
@@ -398,41 +411,48 @@ class PyParser extends ParserBase {
         // scructs -> block
         this.genBlocks()
         
-        util.inspect(this.pyLines.map(struct=>struct.toString()))
+        //util.inspect(this.pyLines.map(struct=>struct.toString()))
+
+        //console.log(this.pyTopBlock.toString(0))
         //util.inspect(this.pyTopBlock)
     }
 
     // construct blocks
     genBlocks() {
         let startMargin = this.pyLines[0].margin
-        let curBlock = new PyBlock(startMargin)
+        let curBlock = new PyBlock(startMargin, null)
         this.pyTopBlock = curBlock
 
         let curLine = null
 
-        let blocks = []
+        let lines = []
         for(let pyStruct of this.pyLines){
             if(pyStruct instanceof PyMargin){
                 if(pyStruct.margin === curBlock.margin){
                     curLine = new PyLine(curBlock)
                     curBlock.push(curLine)
                 } else if(pyStruct.margin.length > curBlock.margin.length){
-                    let block = new PyBlock(pyStruct.margin)
+                    lines.push(curLine)
+                    let block = new PyBlock(pyStruct.margin, curLine)
                     curLine.subBlock = block
                     curBlock = block
                     curLine = new PyLine(curBlock)
                     curBlock.push(curLine)
                 } else if(pyStruct.margin.length < curBlock.margin.length){
-                    if(blocks.length == 0){
-                        console.error(`error syntax indentation of ${curBlock.margin.length}`)
+                    if(lines.length == 0){
+                        //console.error(`error indentation in of ${curBlock.margin.length}`)
                         continue
                     } else {
-                        if(curBlock.margin === curBlock.pyStruct.margin.length){
-                            curBlock = blocks.pop()
+                        let lastLine = lines[lines.length-1]
+                        let lastIden = lastLine.supBlock.margin.length
+                        let curIden = pyStruct.margin.length
+                        if(lastIden === curIden){
+                            curLine = lines.pop()
+                            curBlock = curLine.supBlock
                             curLine = new PyLine(curBlock)
                             curBlock.push(curLine)
                         } else {
-                            console.error(`error syntax indentation of ${pyStruct.margin.length}`)
+                            //console.error(`block indent:${lastIden} != current ident:${curIden}`)
                         }
                     }
                 }
