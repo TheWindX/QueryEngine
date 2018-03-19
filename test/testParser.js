@@ -42,10 +42,35 @@ class ParserTest extends PaserBase{
         test(w('abc'), 0, [[3, 'abc']])
         test(w('abc'), 1, [undefined])
         test(w('123'), 3, [[6, '123']])
-        let r = all(any(w('a'), w('ab'), w('abc')),  any(w('123'), w('c123'), w('bc123')))
-        r.transform = ([[eidx1, w1], [eidx2, w2]])=>{
-            return [w1, w2]
+
+        let r = any(w('a'), w('ab'), w('abc'))
+        r.transform = ([eidx1, w])=>{
+            return w
         }
+        test(r,0, [[1, 'a'], [2, 'ab'], [3, 'abc']]);
+
+        r = any(any(w('a'), w('ab')), w('abc'))
+        r.transform = ([eidx, v])=>{
+            if(eidx == 0){
+                let [eidx1, v1] = v
+                return v1
+            } else {
+                return v
+            }
+        }
+        test(r,0, [[1, 'a'], [2, 'ab'], [3, 'abc']]);
+
+
+        r = all(w('a'), w('b'), w('c'))
+        test(r,0, [[3,['a', 'b', 'c']]]);
+
+        r = all(any(w('a'), w('ab'), w('abc')),  any(w('123'), w('c123'), w('bc123')))
+        r.transform = ([[eidx, v1], [eidx2, v2]])=>{
+            return [v1, v2]
+        }
+        // r.transform = ([[eidx1, w1], [eidx2, w2]])=>{
+        //     return [w1, w2]
+        // }
         test(r,0, [[6, ['a', 'bc123']], [6, ['ab', 'c123']], [6, ['abc', '123']]]);
 
         t.src = 'aaaa'
@@ -55,8 +80,6 @@ class ParserTest extends PaserBase{
             return r
         }
         test(r, 0, [[4, ['a', 'a', 'a', 'a']], [3, ['a', 'a', 'a']],[4, ['a', 'a', 'aa']]])
-
-        
 
         t.src = ''
         test(b, 0, [[0, '']])
@@ -74,7 +97,7 @@ abcabc`
         
         test(regex(/bc/), 0, [[7, 'bc']])
         test(regex(/^bc/), 0, [undefined])
-        
+
         test(step, 0, [[1, null]])
         
         test(eq(' '), 0, [[1, ' ']])
@@ -89,6 +112,13 @@ abcabc`
         test(all(till(w('abc')), till(w('abc'))), 1, [[10, ['abc', 'abc']]])
         test(until(w('x')), 0, [undefined])
         test(till(w('x')), 0, [undefined])
+
+        t.src = `_as2`
+        r = regex(/^[_a-zA-Z]([_a-zA-Z0-9]*)/)
+        r.transform = (v, f, t)=>{
+            return v
+        }
+        test(r, 0, [[4, '_as2']])
 
         t.src = "asdfasdf"
         test(till(t.eof), 0, [[8, ''], undefined]);
@@ -116,7 +146,7 @@ abcabc`
     }
 }
 
-
 (new ParserTest('')).run()
+
 
 console.log('----------------------------------------------pass test parser')
