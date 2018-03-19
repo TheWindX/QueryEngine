@@ -117,7 +117,7 @@ class PyToken extends ParserBase {
         
         
         // skip needless words (currently)
-        let tokens = iters.next().value[1].map(([eidx, v])=>v)
+        let tokens = iters.next()[1].map(([eidx, v])=>v)
         tokens = tokens.filter(t=>{
             if(t instanceof tokenStruct){
                 let tag = t.tag

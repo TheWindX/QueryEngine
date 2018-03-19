@@ -34,7 +34,7 @@ class ParserTest extends PaserBase{
         let test = (rule, n, exps) => {
             let iter = q.query(rule, n)
             for(let exp of exps){
-                assert.deepStrictEqual(exp, iter.next().value)
+                assert.deepStrictEqual(exp, iter.next())
             }
         }
         
@@ -58,7 +58,9 @@ class ParserTest extends PaserBase{
                 return v
             }
         }
+        q.debug.any(true)
         test(r,0, [[1, 'a'], [2, 'ab'], [3, 'abc']]);
+        q.debug.any(false)
 
 
         r = all(w('a'), w('b'), w('c'))

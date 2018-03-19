@@ -376,7 +376,7 @@ class PyParser extends ParserBase {
     parse() {
         let q = this.q
         let iters = q.query(this.pFile, 0)
-        this.pyLines = iters.next().value[1].map(([eidx, v])=>v)
+        this.pyLines = iters.next()[1].map(([eidx, v])=>v)
         this.pyLines.unshift(new PyMargin(0, 0, ''));
 
         let pyStructs = this.pyLines
@@ -413,7 +413,7 @@ class PyParser extends ParserBase {
         
         //util.inspect(this.pyLines.map(struct=>struct.toString()))
 
-        console.log(this.pyTopBlock.toString(0))
+        //console.log(this.pyTopBlock.toString(0))
         //util.inspect(this.pyTopBlock)
     }
 

@@ -2,10 +2,10 @@
  * @fileoverview , from TheWindX.
  */
 /* TODO
- * to fix f* = f* f | ok, cannot to retrace f,
- * recursive detective failed sometimes
+ * left recursive
  * IFactCatch, IFactException
  * IFact.clone
+ * IFactCustomer to run user's iterator
 */
 
 const assert = require('assert')
@@ -77,7 +77,7 @@ class IFact {
     }
 
     name(n) {
-        return '  '.repeat(n) + '.'+this._name
+        return '  '.repeat(n) + '.' + this._name
     }
 
     setName(n) {
@@ -158,7 +158,6 @@ const makeCustomer = (judge, name) => {
     }, name)
 }
 
-
 class IFactPred extends IFact {
     constructor(pred, name) {
         super()
@@ -168,10 +167,10 @@ class IFactPred extends IFact {
         this._pred = pred
     }
 
-    run(st){
+    run(st) {
         let stVal = this._pred(st)
-        if(stVal){
-            if(this.transform){
+        if (stVal) {
+            if (this.transform) {
                 let val = this.transform(stVal[1], st, stVal[0])
                 return [stVal[0], val]
             }
@@ -198,14 +197,17 @@ class IFactAnyIter extends IFactIter {
     next() {
         let st = this.st
         let stVal;
-        if(!this.init){
+        if (!this.init) {
             this.init = true
             let fact = this.facts[this.idx]
-            if(fact instanceof IFactPred){
+            if (fact instanceof IFactPred) {
                 stVal = fact.run(st)
-                if(stVal !== null) {
+                if (stVal !== null) {
                     this.stVal = null
-                    return [stVal[0], [this.idx, stVal[1]]]
+                    return [
+                        stVal[0],
+                        [this.idx, stVal[1]]
+                    ]
                 }
             } else {
                 return this.iter = fact.getIter(st)
@@ -213,30 +215,39 @@ class IFactAnyIter extends IFactIter {
         } else {
             stVal = this.stVal
         }
-        
+
         // next iter
-        if(stVal === null){
-            for(;true;){
+        if (stVal === null) {
+            for (; true;) {
                 let idx = ++this.idx
-                if(idx === this.len) return null
+                if (idx === this.len) 
+                    return null
                 let fact = this.facts[idx]
-                if(fact instanceof IFactPred){
+                if (fact instanceof IFactPred) {
                     stVal = fact.run(st)
-                    if(stVal === null) continue
+                    if (stVal === null) 
+                        continue
                     this.stVal = null
-                    return [stVal[0], [idx, stVal[1]]]
+                    return [
+                        stVal[0],
+                        [idx, stVal[1]]
+                    ]
                 } else {
                     return this.iter = fact.getIter(st)
                 }
             }
-        } else if (stVal === undefined){
+        } else if (stVal === undefined) {
             return this.iter // smae iter next
         } else {
-            let [st, val] = stVal
+            let [st,
+                val] = stVal
             this.stVal = undefined
-            let r = [st, [this.idx, val]]
+            let r = [
+                st,
+                [this.idx, val]
+            ]
             return r
-        }        
+        }
     }
 
     gain(stVal) {
@@ -299,8 +310,8 @@ class IFactAllIter extends IFactIter {
                 if (!(fact instanceof IFact)) 
                     throw `${sysUtil.inspect(fact)} is not fact`
                 console.log(`try ${idx}:${fact.toString(0)}`)
-            } 
-            if (fact instanceof IFactPred){
+            }
+            if (fact instanceof IFactPred) {
                 stVal = fact.run(this.st)
                 this.iters[idx] = null
             } else {
@@ -315,7 +326,7 @@ class IFactAllIter extends IFactIter {
                 let [st,
                     val] = stVal
                 stVal = this.stVal = null
-                
+
                 this.values[this.idx++] = val
                 idx = this.idx
                 if (idx != this.facts.length) {
@@ -323,37 +334,34 @@ class IFactAllIter extends IFactIter {
                     if (debugAll) {
                         if (!(fact instanceof IFact)) 
                             throw `${sysUtil.inspect(fact)} is not fact`
-                    } 
-                    if (fact instanceof IFactPred){
+                    }
+                    if (fact instanceof IFactPred) {
                         stVal = this.stVal = fact.run(st)
                         this.iters[idx] = null
                         continue retrace
                     } else {
                         let iter = fact.getIter(st)
                         this.iters[idx] = iter
-                        if(debugAll){
+                        if (debugAll) {
                             console.log(`try ${idx}:${fact.toString(0)}`)
                         }
                         return iter;
                     }
                 } else {
-                    return [
-                        st,
-                        this.values
-                    ]
+                    return [st, this.values]
                 }
             }
-            for(;true;){
+            for (; true;) {
                 idx = --this.idx;
                 if (idx < 0) 
                     return null
                 let iter = this.iters[idx]
-                if(iter === null){
+                if (iter === null) {
                     continue
                 }
                 if (iter.fact == cut) 
                     return null
-                if(debugAll){
+                if (debugAll) {
                     console.log(`retrace to: ${idx}:${iter.fact.toString(0)}`)
                 }
                 return iter
@@ -416,16 +424,18 @@ class IFactNotIter extends IFactIter {
             if (debugNot) {
                 if (!(fact instanceof IFact)) 
                     throw `${sysUtil.inspect(fact)} is not fact`
-            } if (fact instanceof IFactPred){
+            }
+            if (fact instanceof IFactPred) {
                 stVal = fact.run(this.st)
-                if(stVal) return null
+                if (stVal) 
+                    return null
                 this.stVal = true
                 return [this.st, null]
             } else {
                 this.iter = fact.getIter(this.st)
                 return this.iter
             }
-        } 
+        }
         if (this.stVal == null) {
             this.stVal = true // bug fix / to quit //dirty //TODO
             return [this.st, null]
@@ -475,9 +485,10 @@ class IFactTryIter extends IFactIter {
                 if (!(fact instanceof IFact)) 
                     throw `${sysUtil.inspect(fact)} is not fact`
             }
-            if (fact instanceof IFactPred){
+            if (fact instanceof IFactPred) {
                 stVal = fact.run(this.st)
-                if(stVal) return [this.st, stVal[1]]
+                if (stVal) 
+                    return [this.st, stVal[1]]
                 this.stVal = null
                 return null
             } else {
@@ -520,28 +531,53 @@ class IFactTry extends IFact { // we need it,  because not(not(f)) cannot carry 
     }
 }
 
-function * query(fact, st, isRec = (st, st1) => st <= st1) {
-    try {
+class QueryIter {
+    constructor(fact, st, isRec = (st, st1) => st <= st1) {
+        this.fact = fact
+        this.st = st
+        this.isRec = isRec
+
+        this.iterStk = []
+        this.iter = null
+        this.stVal = null
+        this.factID2St = new FactID2St()
+        this
+            .factID2St
+            .set(fact.id, st)
+
+        this.stVal = null
         if (st === undefined || st === null) 
             throw new Error('query without param of "state"')
         if (fact === undefined || fact === null) 
             throw new Error('query without param of "fact"')
-        if (fact instanceof IFactPred){
-            let stVal = fact.run(st)
-            if(stVal) {
-                return stVal
-            }
-            return
+        if (!(fact instanceof IFact)) {
+            throw Error(`${sysUtil.inspect(fact)}(${fact}) is not fact`);
         }
-        
-        let factID2St = new FactID2St()
-        factID2St.set(fact.id, st)
-        let iterStk = []
-        if (debugOthers) {
-            if (!(fact instanceof IFact)) 
-                throw Error(`${sysUtil.inspect(fact)}(${fact}) is not fact`);
+        if (fact instanceof IFactPred) {
+            this.stVal = fact.run(st)
+            this.iter = null
+        } else {
+            this.iter = fact.getIter(st)
+        }
+    }
+
+    next() {
+        let stVal = this.stVal
+        let fact = this.fact
+        let st = this.st
+        let iter = this.iter
+        let iterStk = this.iterStk
+        let isRec = this.isRec
+        let factID2St = this.factID2St
+
+        if (iter === null) {
+            if (stVal) {
+                this.stVal = null
+                return stVal
+            } else {
+                return undefined
             }
-        let iter = fact.getIter(st)
+        }
 
         for (; true;) {
             let r = iter.next()
@@ -551,10 +587,10 @@ function * query(fact, st, isRec = (st, st1) => st <= st1) {
                 if (bRec) {
                     //console.warn('left recursive')
                     iter.gain(null)
-                } else {
+                } else { //push and query next
                     factID2St.set(r.fact.id, r.st)
                     iterStk.push(iter)
-                    iter = r
+                    iter = this.iter = r
 
                     if (debugStk) {
                         console.log('--------')
@@ -576,7 +612,7 @@ function * query(fact, st, isRec = (st, st1) => st <= st1) {
                 if (iterStk.length != 0) {
                     let serverIter = iter
                     factID2St.delete(serverIter.fact.id)
-                    iter = iterStk.pop()
+                    iter = this.iter = iterStk.pop()
                     if (r && serverIter.fact.transform) {
                         let v = serverIter
                             .fact
@@ -588,21 +624,24 @@ function * query(fact, st, isRec = (st, st1) => st <= st1) {
                 } else {
                     if (r) {
                         if (fact.transform) {
-                            yield[r[0],
-                                fact.transform(r[1], st, r[0])]
+                            let r1 = [
+                                r[0], fact.transform(r[1], st, r[0])
+                            ]
+                            return r1
                         } else {
-                            yield r
+                            return r
                         }
-                    } else 
-                        return
+                    } else {
+                        return undefined
+                    }
                 }
             }
         }
-    } catch (ex) {
-        console.error()
-        throw ex
     }
+}
 
+function query(fact, st, isRec = (st, st1) => st <= st1) {
+    return new QueryIter(fact, st, isRec)
 }
 
 const any = (...fs) => {
@@ -620,7 +659,7 @@ const not = (f) => {
 }
 
 const tryof = (f) => {
-    return not(not(f));//IFactTry(f) //not(not(f)) cannot carry value
+    return not(not(f)); //IFactTry(f) //not(not(f)) cannot carry value
 }
 
 const ok = make((st) => [
@@ -652,7 +691,7 @@ const many = (f) => {
         return v
     }
     let fr = all(fall, ok)
-    fr.transform = (v)=>v[0]
+    fr.transform = (v) => v[0]
     return fr
 }
 
