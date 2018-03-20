@@ -23,8 +23,10 @@ class ParserTest extends PaserBase{
         let eq = t.eq
         let all = q.all
         let any = q.any
+        let zeroOne = q.zero_one
         let not = q.not
         let many = q.many
+        let manyOne = q.many_one
         let tryof = q.tryof
         let l = t.line
         let ls = t.lines
@@ -34,7 +36,11 @@ class ParserTest extends PaserBase{
         let test = (rule, n, exps) => {
             let iter = q.query(rule, n)
             for(let exp of exps){
-                assert.deepStrictEqual(exp, iter.next())
+                let n = iter.next()
+                if(!util.deepEqual(exp, n)){
+                    // util.inspect(n)
+                    assert.deepStrictEqual(exp, iter.next())
+                }
             }
         }
         
@@ -52,17 +58,14 @@ class ParserTest extends PaserBase{
         r = any(any(w('a'), w('ab')), w('abc'))
         r.transform = ([eidx, v])=>{
             if(eidx == 0){
-                let [eidx1, v1] = v
+                let v1 = v[1]
                 return v1
             } else {
                 return v
             }
         }
-        q.debug.any(true)
         test(r,0, [[1, 'a'], [2, 'ab'], [3, 'abc']]);
-        q.debug.any(false)
-
-
+        
         r = all(w('a'), w('b'), w('c'))
         test(r,0, [[3,['a', 'b', 'c']]]);
 
@@ -142,6 +145,25 @@ abcabc`
         this.src="asdfxasdfxasdf"
         test(split(w('asdf'), w('x')), 0, [[14, ['asdf','asdf','asdf']]])
         test(split(w('asdf'), w('a')), 0, [[4, ['asdf']]])
+
+        
+
+
+        // this.src = "a.b()().c"
+        
+        // // var, member, apply, expr
+        // let pexpr = any()
+        // let pvar = regex(/^[_a-zA-Z]([_a-zA-Z0-9]*)/)
+        // pExprPart = any()
+        // pCall = all
+
+
+        // let pmember = all(pexpr, w('.'), pvar)
+        // let pparas = split(pexpr, w(','))
+        // let papply = all(pexpr, w('('), pparas, w(')'))
+        // pexpr.push(pmember, pmember, papply);
+
+        // test(pexpr, 0, [[12, ['a', ['b',[['a','b']]], 'c', 'd']]])
 
         console.log('end-------------------')
         

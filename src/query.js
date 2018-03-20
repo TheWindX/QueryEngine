@@ -2,6 +2,7 @@
  * @fileoverview , from TheWindX.
  */
 /* TODO
+ * only get value or tranform when need
  * left recursive
  * IFactCatch, IFactException
  * IFact.clone
@@ -106,7 +107,7 @@ class IFactIter {
         this.st = st
     }
 
-    // 返回st或iterator，或null
+    // 返回[st, val], [st, ()=>value] 或 iterator，或null
     next() {
         return null
     }
@@ -237,14 +238,23 @@ class IFactAnyIter extends IFactIter {
                 }
             }
         } else if (stVal === undefined) {
-            return this.iter // smae iter next
+            return this.iter // same iter next
         } else {
-            let [st,
-                val] = stVal
+            let st = stVal[0]
+            let valOrBunlder = stVal[1]
+            let idx = this.idx
             this.stVal = undefined
             let r = [
                 st,
-                [this.idx, val]
+                ()=>{
+                    let val
+                    if(typeof(valOrBunlder) == "function"){
+                        val = valOrBunlder()
+                    } else {
+                        val = valOrBunlder
+                    }
+                    return [idx, val]
+                }
             ]
             return r
         }
@@ -306,11 +316,7 @@ class IFactAllIter extends IFactIter {
         let stVal = this.stVal
         if (this.iters.length == 0) {
             let fact = this.facts[idx]
-            if (debugAll) {
-                if (!(fact instanceof IFact)) 
-                    throw `${sysUtil.inspect(fact)} is not fact`
-                console.log(`try ${idx}:${fact.toString(0)}`)
-            }
+            
             if (fact instanceof IFactPred) {
                 stVal = fact.run(this.st)
                 this.iters[idx] = null
@@ -323,18 +329,14 @@ class IFactAllIter extends IFactIter {
         retrace : for (; true;) {
             // try to end
             if (stVal != null) {
-                let [st,
-                    val] = stVal
+                let st = stVal[0]
+                let val = stVal[1]
                 stVal = this.stVal = null
 
                 this.values[this.idx++] = val
                 idx = this.idx
                 if (idx != this.facts.length) {
                     let fact = this.facts[idx]
-                    if (debugAll) {
-                        if (!(fact instanceof IFact)) 
-                            throw `${sysUtil.inspect(fact)} is not fact`
-                    }
                     if (fact instanceof IFactPred) {
                         stVal = this.stVal = fact.run(st)
                         this.iters[idx] = null
@@ -342,16 +344,31 @@ class IFactAllIter extends IFactIter {
                     } else {
                         let iter = fact.getIter(st)
                         this.iters[idx] = iter
-                        if (debugAll) {
-                            console.log(`try ${idx}:${fact.toString(0)}`)
-                        }
                         return iter;
                     }
                 } else {
-                    return [st, this.values]
+                    let values = this.values
+                    let r = [
+                        st,
+                        ()=>{
+                            let vals = []
+                            for(let i = 0; i<values.length; ++i){
+                                let valOrBunlder = values[i]
+                                let val
+                                if(typeof(valOrBunlder) == "function"){
+                                    val = valOrBunlder()
+                                } else {
+                                    val = valOrBunlder
+                                }
+                                vals.push(val)
+                            }
+                            return vals
+                        }
+                    ]
+                    return r
                 }
             }
-            for (; true;) {
+            for (; true;) { // retrace
                 idx = --this.idx;
                 if (idx < 0) 
                     return null
@@ -361,9 +378,7 @@ class IFactAllIter extends IFactIter {
                 }
                 if (iter.fact == cut) 
                     return null
-                if (debugAll) {
-                    console.log(`retrace to: ${idx}:${iter.fact.toString(0)}`)
-                }
+                
                 return iter
             }
         }
@@ -497,10 +512,18 @@ class IFactTryIter extends IFactIter {
             }
         } else {
             if (this.stVal) {
-                let [st,
-                    val] = this.stVal
+                let st = this.stVal[0]
+                let valOrBunlder = this.stVal[1]
                 this.stVal = null
-                return [this.st, val]
+                return [this.st, ()=>{
+                    let val
+                    if(typeof(valOrBunlder) == "function"){
+                        val = valOrBunlder()
+                    } else {
+                        val = valOrBunlder
+                    }
+                    return v
+                }]
             } else {
                 return null
             }
@@ -582,55 +605,56 @@ class QueryIter {
         for (; true;) {
             let r = iter.next()
             if (r instanceof IFactIter) {
-                let st1 = factID2St.get(r.fact.id)
-                let bRec = isRec(r.st, st1)
+                let iter1 = r
+                let st1 = factID2St.get(iter1.fact.id)
+                let bRec = isRec(iter1.st, st1)
                 if (bRec) {
-                    //console.warn('left recursive')
+                    console.warn('left recursive')
                     iter.gain(null)
                 } else { //push and query next
-                    factID2St.set(r.fact.id, r.st)
+                    factID2St.set(iter1.fact.id, iter1.st)
                     iterStk.push(iter)
-                    iter = this.iter = r
-
-                    if (debugStk) {
-                        console.log('--------')
-                        let strStk = iterStk
-                            .map(iter => iter.fact.toString(0))
-                            .join('\n')
-                        console.log(strStk)
-                    }
+                    iter = this.iter = iter1
                 }
                 continue
             } else {
-                if (debugStk) {
-                    console.log('--------')
-                    let strStk = iterStk
-                        .map(iter => iter.fact.toString(0))
-                        .join('\n')
-                    console.log(strStk)
-                }
+                let stFrom = iter.st
                 if (iterStk.length != 0) {
                     let serverIter = iter
                     factID2St.delete(serverIter.fact.id)
                     iter = this.iter = iterStk.pop()
-                    if (r && serverIter.fact.transform) {
-                        let v = serverIter
-                            .fact
-                            .transform(r[1], serverIter.st, r[0])
-                        iter.gain([r[0], v])
+                    if(r != null){
+                        let stTo = r[0]
+                        let valOrBunlder = r[1]
+                        let gv = [stTo, ()=>{
+                            let v;
+                            if(typeof(valOrBunlder)=="function"){
+                                v = valOrBunlder()
+                            } else {
+                                v = valOrBunlder
+                            }
+                            let transform = serverIter.fact.transform
+                            if(transform) v = transform(v, stFrom, stTo)
+                            return v
+                        }]
+                        iter.gain(gv)
                     } else {
-                        iter.gain(r)
+                        iter.gain(null)
                     }
                 } else {
                     if (r) {
-                        if (fact.transform) {
-                            let r1 = [
-                                r[0], fact.transform(r[1], st, r[0])
-                            ]
-                            return r1
+                        let stTo = r[0]
+                        let valOrBunlder = r[1]
+                        let v;
+                        if(typeof(valOrBunlder) ==  "function"){
+                            v = valOrBunlder()
                         } else {
-                            return r
+                            v = valOrBunlder
                         }
+                        if (fact.transform) {
+                            v = fact.transform(v, st, stTo)
+                        }
+                        return [stTo, v]
                     } else {
                         return undefined
                     }
@@ -659,7 +683,7 @@ const not = (f) => {
 }
 
 const tryof = (f) => {
-    return not(not(f)); //IFactTry(f) //not(not(f)) cannot carry value
+    return new IFactTry(f) //not(not(f)) cannot carry value
 }
 
 const ok = make((st) => [
