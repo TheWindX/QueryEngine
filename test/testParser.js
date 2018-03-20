@@ -21,8 +21,8 @@ class ParserTest extends PaserBase{
         let until = t.until
         let till = t.till
         let eq = t.eq
-        let all = q.all
-        let any = q.any
+        let and = q.and
+        let or = q.or
         let not = q.not
         let many = q.many
         let tryof = q.tryof
@@ -43,13 +43,13 @@ class ParserTest extends PaserBase{
         test(w('abc'), 1, [undefined])
         test(w('123'), 3, [[6, '123']])
 
-        let r = any(w('a'), w('ab'), w('abc'))
+        let r = or(w('a'), w('ab'), w('abc'))
         r.transform = ([eidx1, w])=>{
             return w
         }
         test(r,0, [[1, 'a'], [2, 'ab'], [3, 'abc']]);
 
-        r = any(any(w('a'), w('ab')), w('abc'))
+        r = or(or(w('a'), w('ab')), w('abc'))
         r.transform = ([eidx, v])=>{
             if(eidx == 0){
                 let [eidx1, v1] = v
@@ -58,15 +58,15 @@ class ParserTest extends PaserBase{
                 return v
             }
         }
-        q.debug.any(true)
+        q.debug.or(true)
         test(r,0, [[1, 'a'], [2, 'ab'], [3, 'abc']]);
-        q.debug.any(false)
+        q.debug.or(false)
 
 
-        r = all(w('a'), w('b'), w('c'))
+        r = and(w('a'), w('b'), w('c'))
         test(r,0, [[3,['a', 'b', 'c']]]);
 
-        r = all(any(w('a'), w('ab'), w('abc')),  any(w('123'), w('c123'), w('bc123')))
+        r = and(or(w('a'), w('ab'), w('abc')),  or(w('123'), w('c123'), w('bc123')))
         r.transform = ([[eidx, v1], [eidx2, v2]])=>{
             return [v1, v2]
         }
@@ -76,7 +76,7 @@ class ParserTest extends PaserBase{
         test(r,0, [[6, ['a', 'bc123']], [6, ['ab', 'c123']], [6, ['abc', '123']]]);
 
         t.src = 'aaaa'
-        r = many(any(w('a'), w('aa')))
+        r = many(or(w('a'), w('aa')))
         r.transform = (eidxVs)=>{
             let r = eidxVs.map(n=>n[1])
             return r
@@ -111,7 +111,7 @@ abcabc`
 
 
         test(until(w('abc')), 0, [[4, '   \n']])
-        test(all(till(w('abc')), till(w('abc'))), 1, [[10, ['abc', 'abc']]])
+        test(and(till(w('abc')), till(w('abc'))), 1, [[10, ['abc', 'abc']]])
         test(until(w('x')), 0, [undefined])
         test(till(w('x')), 0, [undefined])
 
@@ -142,6 +142,15 @@ abcabc`
         this.src="asdfxasdfxasdf"
         test(split(w('asdf'), w('x')), 0, [[14, ['asdf','asdf','asdf']]])
         test(split(w('asdf'), w('a')), 0, [[4, ['asdf']]])
+
+
+
+        this.src = "a.b.c.d(e,f(g)).h"
+        let pvar, papply, pchainExpr, pexpr
+        pvar = t.regex(/^[_a-zA-Z]([_a-zA-Z0-9]*)/)
+        
+
+
 
         console.log('end-------------------')
         

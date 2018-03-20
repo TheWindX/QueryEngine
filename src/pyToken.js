@@ -34,8 +34,8 @@ class PyToken extends ParserBase {
         let until = t.until
         let till = t.till
         let eq = t.eq
-        let all = q.all
-        let any = q.any
+        let and = q.and
+        let or = q.or
         let not = q.not
         let many = q.many
         let tryof = q.tryof
@@ -65,7 +65,7 @@ class PyToken extends ParserBase {
 
         //keyword
         let k = (text) => {
-            let r = all(this.word(text), tryof(blank));
+            let r = and(this.word(text), tryof(blank));
             r.transform = ([v,_],f,t)=> new tokenStruct('str', f, t, v)
             return r
         }
@@ -76,15 +76,15 @@ class PyToken extends ParserBase {
 
         // comment
         // `"""  ... '''` to endl
-        let q1 = this.word(`'''`); let comment1 = all(q1, until(q1)) // """ """
-        let q2 = this.word(`"""`); let comment2 = all(q2, until(q2)) // ''' '''
-        let comment = any(comment1, comment2) //
-        t.tMultiComment = all(comment, line) // ''' ''' ... \n
+        let q1 = this.word(`'''`); let comment1 = and(q1, until(q1)) // """ """
+        let q2 = this.word(`"""`); let comment2 = and(q2, until(q2)) // ''' '''
+        let comment = or(comment1, comment2) //
+        t.tMultiComment = and(comment, line) // ''' ''' ... \n
         t.tMultiComment.transform = (v, f, t)=>new tokenStruct('comment', f, t)
         
 
         // `#
-        t.tSingleComment = all(w(`#`), line);
+        t.tSingleComment = and(w(`#`), line);
         t.tSingleComment.transform = (v, f, t)=> new tokenStruct('comment', f, t)
 
         // space or margin space
@@ -101,11 +101,11 @@ class PyToken extends ParserBase {
         }
         
         // other words that need not deal with
-        t.tSkip = all(this.step, not(eof))
+        t.tSkip = and(this.step, not(eof))
         t.tSkip.transform = (s, f, t)=> new tokenStruct('skip', f, t)
 
         
-        t.tokens = any(t.tmargin, 
+        t.tokens = or(t.tmargin, 
             w('('), w(')'), w(','), w('.'), w(':'), w('*'), k('if'), k('elif'), k('else'), k('while'), k('for'), k('def'),k('class'),
             t.tSingleComment, k('as'), k('import'), k('from'), 
             t.tvar, t.tMultiComment, t.tSkip);

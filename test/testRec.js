@@ -16,14 +16,14 @@ class ParserRec extends PaserBase{
         let nb = this.noblanks()
         let regex = this.regex
         let follow = this.follow
-        let all = q.all
-        let any = q.any
+        let and = q.and
+        let or = q.or
 
         this.src = "a(da(dddda()))"
 
-        let r = all()
+        let r = and()
 
-        r.push(w('a'), w('('), q.many( q.any(w('d'), r ) ), w(')'))
+        r.push(w('a'), w('('), q.many( q.or(w('d'), r ) ), w(')'))
 
         r.transform = ([a, _, inner, _1]) => {
             return [a, inner]
@@ -35,7 +35,7 @@ class ParserRec extends PaserBase{
         ////
         this.src = "11111111111111"
 
-        r = all()
+        r = and()
 
         r.push(q.zero_one(r), w('1'))
 
@@ -50,7 +50,7 @@ class ParserRec extends PaserBase{
 
         this.src = "a(a(a()))"
 
-        r = all()
+        r = and()
 
         r.push(w('a'), w('('),q.zero_one(r), w(')'))
 

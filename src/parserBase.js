@@ -11,8 +11,8 @@ class PaserBase {
 
     init() {
         this.q = q
-        let all = q.all
-        let any = q.any
+        let and = q.and
+        let or = q.or
         let not = q.not
         let tryof = q.tryof
         let arg
@@ -84,7 +84,7 @@ class PaserBase {
             }, `${val}`);
 
         this.follow = (f, next) => {
-            let f1 = q.all(f, q.tryof(next))
+            let f1 = q.and(f, q.tryof(next))
             f1.transform = (v) => {
                 return v[0]
             }
@@ -127,12 +127,12 @@ class PaserBase {
 
 
         // match to line
-        this.line = any(this.till(this.endl), this.till(this.eof))
+        this.line = or(this.till(this.endl), this.till(this.eof))
         this.line.transform = ([eidx, v], f, t)=>{
             let r = this.src.slice(f, t-v.length)
             return this.src.slice(f, t-v.length)
         }
-        //match all lines
+        //match and lines
         this.lines = q.many(this.line);
         
         //match no blank
@@ -159,7 +159,7 @@ class PaserBase {
 
         // r [, r]+
         this.split = (rule, splitor) => {
-            let r = q.zero_one(q.all(rule, q.many(q.all(splitor, rule))))
+            let r = q.zero_one(q.and(rule, q.many(q.and(splitor, rule))))
             r.transform = (val)=>{
                 if(val instanceof Array) {
                     let [v, svs] = val

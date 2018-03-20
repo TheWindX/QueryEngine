@@ -86,7 +86,7 @@ class PyImFrom extends PyStruct{
     constructor(f, t, mod, xys) {
         super(f, t)
         this.mod = mod
-        this.xys = xys // all functions if xys == null
+        this.xys = xys // and functions if xys == null
     }
 
     toString(){
@@ -234,8 +234,8 @@ class PyParser extends ParserBase {
 
         // construct parser 
         let q = this.q
-        let all = q.all
-        let any = q.any
+        let and = q.and
+        let or = q.or
         let not = q.not
         let until = this.until
 
@@ -272,7 +272,7 @@ class PyParser extends ParserBase {
         }
 
         //import (x [as y])+ x [as y]
-        let xy = q.all(tag('var'), q.zero_one(q.all(w('as'), tag('var'))));
+        let xy = q.and(tag('var'), q.zero_one(q.and(w('as'), tag('var'))));
 
         xy.transform = ([v1, v2]) => {
             let r1 = v1.value
@@ -283,13 +283,13 @@ class PyParser extends ParserBase {
             return [r1]
         }
 
-        let pimport = q.all(w('import'), this.split(xy, w(',')))
+        let pimport = q.and(w('import'), this.split(xy, w(',')))
         pimport.transform = ([_, xys], f, t) => {
             return new PyImMod(f, t, xys)
         }
 
         // from mod import (* | (x [as y])+)
-        let pfrom = q.all(w('from'), tag('var'), w('import'), q.any(w('*'), this.split(xy, w(','))))
+        let pfrom = q.and(w('from'), tag('var'), w('import'), q.or(w('*'), this.split(xy, w(','))))
         pfrom.transform = ([from, {value:mod}, im, [eidx, starOrXys]], f, t) => {
             if (starOrXys == "*") {
                 return new PyImFrom(f, t, mod, [])
@@ -299,32 +299,32 @@ class PyParser extends ParserBase {
         }
 
         // def var (var, (','var)* ):
-        let pdef = q.all(w('def'), tag('var'), w('('), this.split(tag('var'), w(',')), w(')'), w(':'))
+        let pdef = q.and(w('def'), tag('var'), w('('), this.split(tag('var'), w(',')), w(')'), w(':'))
         this.pdef = pdef
         pdef.transform = ([_, defName, _1, args], f, t)=>{
             return new PyDef(f, t, defName.value, args.map(arg=>arg.value))
         }
 
         // class C(S1, S2):
-        let pclass = q.all(w('class'), tag('var'), w('('), this.split(tag('var'), w(',')), w(')'), w(':'))
+        let pclass = q.and(w('class'), tag('var'), w('('), this.split(tag('var'), w(',')), w(')'), w(':'))
         pclass.transform = ([_, className, _1, supClasseNames], f, t)=>{
             return new PyClass(f, t, className.value, supClasseNames.map(arg=>arg.value))
         }
 
         //expressions
-        let papply = all()
-        let pother = all()
-        let pChainVar = all()
-        let pExpr = any(papply, pChainVar, pother)
+        let papply = and()
+        let pother = and()
+        let pChainVar = and()
+        let pExpr = or(papply, pChainVar, pother)
         pExpr.transform = ([eidx, v])=>{
             return v
         }
         
-        let pif = all()
-        let pelif = all()
-        let pelse = all()
-        let pwhile = all()
-        let pfor = all()
+        let pif = and()
+        let pelif = and()
+        let pelse = and()
+        let pwhile = and()
+        let pfor = and()
 
         pif.push(w('if'), until(w(':')), w(':'));
         pif.transform = ([_, contents, _1], f, t)=>{
@@ -369,7 +369,7 @@ class PyParser extends ParserBase {
             return new PyOther(f, t, this.src[f])
         }
 
-        let pexpression = q.any(pif, pelif, pelse, pfor, pwhile, pimport, pfrom, papply, pdef, pclass, pmargin, pother)
+        let pexpression = q.or(pif, pelif, pelse, pfor, pwhile, pimport, pfrom, papply, pdef, pclass, pmargin, pother)
         this.pFile = q.many(pexpression)
     }
 

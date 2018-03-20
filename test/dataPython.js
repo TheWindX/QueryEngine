@@ -257,7 +257,7 @@ class BrickWall (pygame.sprite.Group):
    def collide (self, ball):
        """
            check collisions between the ball and 
-           any of the bricks.
+           or of the bricks.
        """
        for brick in self._bricks:
            if brick.collide(ball):

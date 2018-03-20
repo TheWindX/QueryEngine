@@ -252,7 +252,7 @@ function* query(fact, st){
     }
 }
 
-let any = (...fs)=>{
+let or = (...fs)=>{
     let f = new IFactAny(fs)
     return f
 }
@@ -268,7 +268,7 @@ let not = (f)=>{
 
 let many = (f)=>{
     let f1 = all(f)
-    let f2 = any(f1, ok)
+    let f2 = or(f1, ok)
     f1.push(f2)
     f1.combinator = (a,b)=>{
         if(b instanceof Array){
@@ -297,7 +297,7 @@ let many_one = (f)=>{
 }
 
 let zero_one = (f)=>{
-    return any(f, ok)
+    return or(f, ok)
 }
 
 let argument = (judge)=>{
@@ -315,4 +315,4 @@ let until = (skipFact, untilFact)=> {
     return f2
 }
 
-module.exports = {zero_one, many, many_one, any, all, not, until, fail, cut, argument, query}
+module.exports = {zero_one, many, many_one, or, all, not, until, fail, cut, argument, query}

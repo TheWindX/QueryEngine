@@ -259,7 +259,7 @@ class IFactAny extends IFact {
     constructor(facts = []) {
         facts.forEach(f => {
             if (!(f instanceof IFact)) 
-                throw new Error(`any construct of ${f}`)
+                throw new Error(`or construct of ${f}`)
         })
 
         super()
@@ -277,7 +277,7 @@ ${this
     push(...facts) {
         facts.forEach(f => {
             if (!(f instanceof IFact)) 
-                throw new Error(`any push of ${f}`)
+                throw new Error(`or push of ${f}`)
         })
         this
             .facts
@@ -379,7 +379,7 @@ class IFactAll extends IFact {
         super()
         facts.forEach(f => {
             if (!(f instanceof IFact)) 
-                throw new Error(`all construct of ${f}`)
+                throw new Error(`and construct of ${f}`)
         })
         this.facts = facts
     }
@@ -395,7 +395,7 @@ ${this
     push(...facts) {
         facts.forEach(f => {
             if (!(f instanceof IFact)) 
-                throw new Error(`all push of ${f}`)
+                throw new Error(`and push of ${f}`)
         })
         this
             .facts
@@ -516,7 +516,7 @@ class IFactTry extends IFact { // we need it,  because not(not(f)) cannot carry 
     constructor(fact) {
         super()
         if (!(fact instanceof IFact)) 
-            throw new Error(`all construct of ${fact}`)
+            throw new Error(`and construct of ${fact}`)
         this.fact = fact
     }
 
@@ -644,12 +644,12 @@ function query(fact, st, isRec = (st, st1) => st <= st1) {
     return new QueryIter(fact, st, isRec)
 }
 
-const any = (...fs) => {
+const or = (...fs) => {
     let f = new IFactAny(fs)
     return f
 }
 
-const all = (...fs) => {
+const and = (...fs) => {
     let f = new IFactAll(fs)
     return f
 }
@@ -674,8 +674,8 @@ const cut = make((st) => [
 
 // f* = f f* | ok //
 const many = (f) => {
-    let fall = any()
-    let fpath1 = all(f, fall)
+    let fall = or()
+    let fpath1 = and(f, fall)
     fpath1.transform = (vvs) => {
         let v = vvs[0]
         let vs = vvs[1]
@@ -690,7 +690,7 @@ const many = (f) => {
         }
         return v
     }
-    let fr = all(fall, ok)
+    let fr = and(fall, ok)
     fr.transform = (v) => v[0]
     return fr
 }
@@ -698,7 +698,7 @@ const many = (f) => {
 const many_one = (f) => {
     let f1 = f
     let f2 = many(f)
-    let fall = all(f1, f2)
+    let fall = and(f1, f2)
     fall.transform = (vvs) => {
         let v = vvs[0]
         let vs = vvs[1]
@@ -709,7 +709,7 @@ const many_one = (f) => {
 }
 
 const zero_one = (f) => {
-    let f1 = any(f, ok)
+    let f1 = or(f, ok)
     f1.transform = ([eidx, v]) => {
         return v
     }
@@ -717,8 +717,8 @@ const zero_one = (f) => {
 }
 
 const until = (matchFact, stepFact, terminateFact) => {
-    let tryStep = all(not(terminateFact), not(matchFact), stepFact)
-    let f = any(tryof(matchFact), all(many(tryStep), cut, tryof(matchFact)))
+    let tryStep = and(not(terminateFact), not(matchFact), stepFact)
+    let f = or(tryof(matchFact), and(many(tryStep), cut, tryof(matchFact)))
     f.transform = ([eidx, v]) => {
         if (eidx == 0) {
             return []
@@ -736,8 +736,8 @@ const until = (matchFact, stepFact, terminateFact) => {
 
 // (until, match)
 let till = (matchFact, stepFact, terminateFact) => {
-    let tryStep = all(not(terminateFact), not(matchFact), stepFact)
-    let f = any(matchFact, all(many(tryStep), cut, matchFact))
+    let tryStep = and(not(terminateFact), not(matchFact), stepFact)
+    let f = or(matchFact, and(many(tryStep), cut, matchFact))
     f.transform = ([
         eidx, v
     ], f, t) => {
@@ -782,10 +782,10 @@ let debug = {
     stkSize(sz) {
         debugStkSize = sz
     },
-    any(b) {
+    or(b) {
         debugAny = b
     },
-    all(b) {
+    and(b) {
         debugAll = b
     },
     not(b) {
@@ -799,8 +799,8 @@ let debug = {
     }
 }
 module.exports = {
-    any,
-    all,
+    or,
+    and,
     not,
     tryof, // equal to not(not()), more efficence
     zero_one,
