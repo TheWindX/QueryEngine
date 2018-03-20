@@ -23,14 +23,15 @@ class PyLine {
     constructor(supBlock){
         this.supBlock = supBlock
         this.subBlock = null
+        this.structs = []
     }
 
-    setStruct(pyStruct){
-        this.pyStruct = pyStruct
+    pushStruct(pyStruct){
+        this.structs.push(pyStruct)
     }
 
     toString(n){
-        let r = ' '.repeat(n)+this.pyStruct.toString()+'\n'
+        let r = ' '.repeat(n)+this.structs.map(s=>s.toString()).join('...')+'\n'
         if(this.subBlock){
             r += this.subBlock.toString(n+2)
         }
@@ -176,7 +177,7 @@ class pyFor extends PyStruct {
     }
 
     toString(){
-        return `for (...}):`
+        return `for (...):`
     }
 }
 
@@ -195,6 +196,17 @@ class PyApply extends PyExpr {
 
     toString() {
         return `${this.chainName.toString()}(${this.paras.map(p=>p.toString()).join(',')})`
+    }
+}
+
+class PyApplys extends PyExpr {
+    constructor(f, t, applys){
+        super(f, t)
+        this.applys = applys
+    }
+
+    toString() {
+        return `${this.applys.map(p=>p.toString()).join('.')}`
     }
 }
 
@@ -238,6 +250,9 @@ class PyParser extends ParserBase {
         let or = q.or
         let not = q.not
         let until = this.until
+        let till = this.till
+        let split = this.split
+        let split1 = this.split1
 
         let w = (str) => q.make((idx) => {
             let v = this.src[idx]
@@ -272,7 +287,7 @@ class PyParser extends ParserBase {
         }
 
         //import (x [as y])+ x [as y]
-        let xy = q.and(tag('var'), q.zero_one(q.and(w('as'), tag('var'))));
+        let xy = q.and(tag('var'), q.zero1(q.and(w('as'), tag('var'))));
 
         xy.transform = ([v1, v2]) => {
             let r1 = v1.value
@@ -283,13 +298,13 @@ class PyParser extends ParserBase {
             return [r1]
         }
 
-        let pimport = q.and(w('import'), this.split(xy, w(',')))
+        let pimport = q.and(w('import'), this.split1(xy, w(',')))
         pimport.transform = ([_, xys], f, t) => {
             return new PyImMod(f, t, xys)
         }
 
         // from mod import (* | (x [as y])+)
-        let pfrom = q.and(w('from'), tag('var'), w('import'), q.or(w('*'), this.split(xy, w(','))))
+        let pfrom = q.and(w('from'), tag('var'), w('import'), q.or(w('*'), this.split1(xy, w(','))))
         pfrom.transform = ([from, {value:mod}, im, [eidx, starOrXys]], f, t) => {
             if (starOrXys == "*") {
                 return new PyImFrom(f, t, mod, [])
@@ -326,12 +341,12 @@ class PyParser extends ParserBase {
         let pwhile = and()
         let pfor = and()
 
-        pif.push(w('if'), until(w(':')), w(':'));
+        pif.push(w('if'), till(w(':')));
         pif.transform = ([_, contents, _1], f, t)=>{
             return new pyIf(f, t, contents)
         }
 
-        pelif.push(w('elif'), until(w(':')), w(':'));
+        pelif.push(w('elif'), till(w(':')));
         pelif.transform = ([_, contents, _1], f, t)=>{
             return new PyElif(f, t, contents)
         }
@@ -341,12 +356,12 @@ class PyParser extends ParserBase {
             return new PyElse(f, t)
         }
 
-        pwhile.push(w('while'), until(w(':')), w(':'))
+        pwhile.push(w('while'), till(w(':')))
         pwhile.transform = ([_, contents, _1], f, t)=>{
             return new PyWhile(f, t, contents)
         }
 
-        pfor.push(w('for'), until(w(':')), w(':'))
+        pfor.push(w('for'), till(w(':')))
         pfor.transform = ([_, content, _1], f, t)=>{
             return new pyFor(f, t, content)
         }
@@ -358,7 +373,12 @@ class PyParser extends ParserBase {
             return new PyApply(f, t, chainName, ps)
         }
 
-        pChainVar.push(this.split(tag('var'), w('.')))
+        let pChainApply = this.split1(papply, w('.'))
+        pChainApply.transform = (vs, f, t)=>{
+            return new PyApplys(f, t, vs)
+        }
+
+        pChainVar.push(this.split1(tag('var'), w('.')))
         pChainVar.transform = ([vs], f, t)=>{
             return new PyChainVar(f, t, vs.map(v=>v.value))
         }
@@ -369,7 +389,7 @@ class PyParser extends ParserBase {
             return new PyOther(f, t, this.src[f])
         }
 
-        let pexpression = q.or(pif, pelif, pelse, pfor, pwhile, pimport, pfrom, papply, pdef, pclass, pmargin, pother)
+        let pexpression = q.or(pif, pelif, pelse, pfor, pwhile, pimport, pfrom, pChainApply, pdef, pclass, pmargin, pother)
         this.pFile = q.many(pexpression)
     }
 
@@ -413,7 +433,7 @@ class PyParser extends ParserBase {
         
         //util.inspect(this.pyLines.map(struct=>struct.toString()))
 
-        //console.log(this.pyTopBlock.toString(0))
+        console.log(this.pyTopBlock.toString(0))
         //util.inspect(this.pyTopBlock)
     }
 
@@ -440,24 +460,36 @@ class PyParser extends ParserBase {
                     curBlock.push(curLine)
                 } else if(pyStruct.margin.length < curBlock.margin.length){
                     if(lines.length == 0){
-                        //console.error(`error indentation in of ${curBlock.margin.length}`)
                         continue
                     } else {
-                        let lastLine = lines[lines.length-1]
-                        let lastIden = lastLine.supBlock.margin.length
-                        let curIden = pyStruct.margin.length
-                        if(lastIden === curIden){
-                            curLine = lines.pop()
-                            curBlock = curLine.supBlock
-                            curLine = new PyLine(curBlock)
-                            curBlock.push(curLine)
-                        } else {
-                            //console.error(`block indent:${lastIden} != current ident:${curIden}`)
+                        // find same margin
+                        let matchIdx = -1
+                        let curIden = pyStruct.margin
+                        for(let i = lines.length-1; i>-1; --i){
+                            let line = lines[i]
+                            let lastIden = line.supBlock.margin
+                            if(lastIden === curIden){
+                                matchIdx = i
+                                break
+                            }
                         }
+
+                        if(matchIdx == -1) {
+                            console.error(`error indentation in of ${curBlock.margin.length}`)
+                            continue //warning, margin is wrong 
+                        }
+
+                        let lastLine = lines[matchIdx]
+                        while(lines.length != matchIdx){
+                            curLine = lines.pop()    
+                        }
+                        curBlock = curLine.supBlock
+                        curLine = new PyLine(curBlock)
+                        curBlock.push(curLine)
                     }
                 }
             } else {
-                curLine.setStruct(pyStruct)
+                curLine.pushStruct(pyStruct)
             }
         }
     }

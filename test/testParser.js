@@ -25,6 +25,8 @@ class ParserTest extends PaserBase{
         let or = q.or
         let not = q.not
         let many = q.many
+        let many1 = q.many1
+        let zero1 = q.zero1
         let tryof = q.tryof
         let l = t.line
         let ls = t.lines
@@ -34,7 +36,11 @@ class ParserTest extends PaserBase{
         let test = (rule, n, exps) => {
             let iter = q.query(rule, n)
             for(let exp of exps){
-                assert.deepStrictEqual(exp, iter.next())
+                let r = iter.next()
+                if(!util.deepEqual(r, exp)){
+                    util.inspect(r)
+                    assert.deepStrictEqual(exp, r)
+                }
             }
         }
         
@@ -143,11 +149,67 @@ abcabc`
         test(split(w('asdf'), w('x')), 0, [[14, ['asdf','asdf','asdf']]])
         test(split(w('asdf'), w('a')), 0, [[4, ['asdf']]])
 
+        this.src="a.b."
+        test(split(regex('[a-b]'), w('.')), 0, [[3, ['a','b']]])
+        
 
-
-        this.src = "a.b.c.d(e,f(g)).h"
-        let pvar, papply, pchainExpr, pexpr
+        this.src = "a.b.c.d(e,f()(g)).h"
+        let pvar, papply, pchainExprPart, pChainApply, pchainExpr, pexpr
+        pexpr = or()
         pvar = t.regex(/^[_a-zA-Z]([_a-zA-Z0-9]*)/)
+        pChainApply = and(w('('), split(pexpr, w(',')), w(')'))
+        pChainApply.transform = (v)=>{
+            let args = v[1]
+            return args
+        }
+        papply = and(pvar, many1(pChainApply))
+        papply.transform = (v)=>{
+            let m = v[0]
+            let apps = v[1]
+            return [m, apps]
+        }
+        
+        pchainExprPart = or(papply, pvar)
+        pchainExprPart.transform = (v)=>{
+            return v[1]
+        }
+
+        pchainExpr = split(pchainExprPart, w('.'))
+        pchainExpr.transform = (vs)=>{
+            let prefix = false
+            let r = vs.reduce((c, v)=>{
+                console.log('v:', prefix, v)
+                if(v instanceof Array){
+                    if(!prefix){
+                        c[1] = v
+                    }
+                    prefix = true
+                } else {
+                    if(prefix){
+                        console.log('c2', v)
+                        c[2].push(v)
+                    } else {
+                        c[0].push(v)
+                    }
+                }
+                return c
+            }, [[], null, []]) // [prifix, apply1, [members]]
+            if(!r[1]){
+                return r[0]
+            } else {
+                return r
+            }
+            return r
+        }
+
+        pexpr.push(pchainExpr, w('123'))
+        pexpr.transform = (v)=>{
+            let eidx = v[0]
+            let v1 = v[1]
+            return v1
+        }
+        
+        //test(pchainExpr, 0, [[1]])
         
 
 

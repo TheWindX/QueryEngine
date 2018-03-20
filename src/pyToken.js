@@ -154,7 +154,7 @@ class PyToken extends ParserBase {
             }
             lastToken = t
         }
-        //util.inspect(tokens)
+        util.inspect(tokens)
         return tokens
     }
     

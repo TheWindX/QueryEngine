@@ -158,8 +158,19 @@ class PaserBase {
         }
 
         // r [, r]+
+        this.split1 = (rule, splitor) => {
+            let r = q.and(rule, q.many(q.and(splitor, rule)))
+            r.transform = (val)=>{
+                let [v, svs] = val
+                let vs = svs.map(sv=>sv[1])
+                vs.unshift(v)
+                return vs
+            }
+            return r
+        }
+
         this.split = (rule, splitor) => {
-            let r = q.zero_one(q.and(rule, q.many(q.and(splitor, rule))))
+            let r = q.zero1(q.and(rule, q.many(q.and(splitor, rule))))
             r.transform = (val)=>{
                 if(val instanceof Array) {
                     let [v, svs] = val

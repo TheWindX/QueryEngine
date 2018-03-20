@@ -37,7 +37,7 @@ class ParserRec extends PaserBase{
 
         r = and()
 
-        r.push(q.zero_one(r), w('1'))
+        r.push(q.zero1(r), w('1'))
 
         r.transform = ([a, _, inner, _1]) => {
             return [a, inner]
@@ -52,7 +52,7 @@ class ParserRec extends PaserBase{
 
         r = and()
 
-        r.push(w('a'), w('('),q.zero_one(r), w(')'))
+        r.push(w('a'), w('('),q.zero1(r), w(')'))
 
         iters = q.query(r, 0)
         util.inspect(iters.next())

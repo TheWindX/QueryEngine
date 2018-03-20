@@ -695,7 +695,7 @@ const many = (f) => {
     return fr
 }
 
-const many_one = (f) => {
+const many1 = (f) => {
     let f1 = f
     let f2 = many(f)
     let fall = and(f1, f2)
@@ -708,7 +708,7 @@ const many_one = (f) => {
     return fall
 }
 
-const zero_one = (f) => {
+const zero1 = (f) => {
     let f1 = or(f, ok)
     f1.transform = ([eidx, v]) => {
         return v
@@ -803,9 +803,9 @@ module.exports = {
     and,
     not,
     tryof, // equal to not(not()), more efficence
-    zero_one,
+    zero1,
     many,
-    many_one,
+    many1,
     until,
     till,
     log,

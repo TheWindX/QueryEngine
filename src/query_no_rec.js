@@ -281,7 +281,7 @@ let many = (f)=>{
     return f2
 }
 
-let many_one = (f)=>{
+let many1 = (f)=>{
     let f1 = many(f)
     let f2 = all(f)
     f2.combinator = (a, b)=>{
@@ -296,7 +296,7 @@ let many_one = (f)=>{
     return f2
 }
 
-let zero_one = (f)=>{
+let zero1 = (f)=>{
     return or(f, ok)
 }
 
@@ -315,4 +315,4 @@ let until = (skipFact, untilFact)=> {
     return f2
 }
 
-module.exports = {zero_one, many, many_one, or, all, not, until, fail, cut, argument, query}
+module.exports = {zero1, many, many1, or, all, not, until, fail, cut, argument, query}
