@@ -67,6 +67,25 @@ class PyStruct {
         return `from:${this.from},to:${this.to}`
     }
 
+    preString(struct1, struct2, parser) {
+        let tok1, tok2, idx1, idx2;
+        idx1 = 0
+        idx2 = parser.textSrc.length
+
+        if(struct1){
+            tok1 = parser.src[struct1.to]
+            idx1 = tok1.from
+        }
+            
+        if(struct2){
+            tok2 = parser.src[struct2.from]
+            idx2 = tok2.from
+        }
+
+        let r = parser.textSrc.slice(idx1, idx2)
+        return r
+    }
+
     isLoop() {
         return false
     }
@@ -259,8 +278,6 @@ class PyApply extends PyExpr {
     }
 
     toString() {
-        util.inspect('pyapply')
-        util.inspect(this)
         return `${this
             .chainName
             .toString()}(${this
@@ -330,7 +347,8 @@ class PyParser extends ParserBase {
         this.src = (new PyToken(this.textSrc)).getTokens() //tokens as source
         // info of every line
         this.pyLines = []
-
+        this.pyDecoratedStruct = [] // 被修饰需要处理的py结构
+        this.pyImports = []
         // the top block struct
         this.pyTopBlock = null
 
@@ -563,7 +581,7 @@ class PyParser extends ParserBase {
 
         //util.inspect(this.pyLines.map(struct=>struct.toString()))
 
-        console.log(this.pyTopBlock.toString(0))
+        console.log(this.reconstrct())
         //util.inspect(this.pyTopBlock)
     }
 
@@ -614,16 +632,17 @@ class PyParser extends ParserBase {
 
                         let lastLine = lines[matchIdx]
                         while (lines.length != matchIdx) {
-                            if (loop && !async) { //loop 且 未有async, 插入nop
+                            if (loop && !async) { //loop 且 未有async过程, 插入async.nop
                                 loop = false
                                 async = true
-                                let structs = curBlock.pyLines[0].structs
+                                let structs = curBlock.supLine.structs
                                 let lastStruct = structs[structs.length-1]
                                 let newLine = new PyLine(curBlock)
                                 curBlock.pyLines.unshift(newLine)
-                                newLine
-                                    .structs
-                                    .push(new PyNop(lastStruct.to, lastStruct.to))
+                                let nextStruct = curBlock.pyLines[1].structs[0]
+                                let struct = new PyNop(nextStruct.from, lastStruct.to) // NOTE， from > to
+                                this.pyDecoratedStruct.push(struct)
+                                newLine.structs.push(struct)
                             }
                             
                             curLine = lines.pop()
@@ -636,38 +655,45 @@ class PyParser extends ParserBase {
             } else {
                 if (pyStruct instanceof PyImMod) {
                     asyncManager.importMod(pyStruct.xys)
+                    this.pyDecoratedStruct.push(pyStruct)
                 } else if (pyStruct instanceof PyImFrom) {
                     asyncManager.fromMod(pyStruct.mod, pyStruct.xys)
+                    this.pyDecoratedStruct.push(pyStruct)
                 }
                 if (pyStruct.isAsync()) {
+                    this.pyDecoratedStruct.push(pyStruct);
                     async = true
                 } else if (pyStruct.isLoop()) {
                     loop = true
+                } else if(pyStruct instanceof PyDef) { //如果pyDef
+                    if(async) {
+                        asyncManager.registFunc('', pyStruct.defName)
+                    }
                 }
                 curLine.pushStruct(pyStruct)
             }
         }
     }
-}
 
-// reconstruct(){     let curBlock = this.curBlock     enterblock:
-// for(;true;){         let async = false         for(let line of
-// curBlock.lines){             for(let info of line.structs){
-// if(info instanceof PyImMod){                     asyncManager.importMod(xys)
-//                } else if(info instanceof PyImFrom){
-// asyncManager.fromMod(info.mod, info.xys)                 } else if(info
-// instanceof PyApplys){                     let apply = info.applys[0]
-//            let chainNames = apply.chainName.split('.')
-// if(asyncManager.queryFuncName(chainNames)){
-// info.async = true                         async = true                     }
-//                } else if(info instanceof PyFor ||info instanceof PyWhile ) {
-//                    if(!info.subBlock){
-// console.error(`TODO, for while without sub block`)                     } else
-// {                         let first = info.subBlock.lines[0]
-//        info.subBlock.lines.unshift(new PyNop(first.from, first.to))
-//               curBlock = info.subBlock                         continue
-// enterblock                     }                 }             }         }
-//      if(!async) {         }         curBlock = info.subBlock
-// if(!curBlock) return         continue enterblock     } }
+    reconstrct() {
+        let r = ''
+        let lastStruct = undefined
+        for(let struct of this.pyDecoratedStruct){
+            if(struct instanceof PyImMod){
+                this.pyImports.push(struct)
+                lastStruct = struct
+            } else if(struct instanceof PyImFrom){
+                lastStruct = struct
+            } else {
+                console.log(struct.toString(0))
+                r += struct.preString(lastStruct, struct, this)
+                r += struct.toString(0)
+                lastStruct = struct
+            }
+        }
+        r += lastStruct.preString(lastStruct, undefined, this);
+        return r
+    }
+}
 
 module.exports = PyParser

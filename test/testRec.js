@@ -56,7 +56,6 @@ class ParserRec extends PaserBase{
 
         iters = q.query(r, 0)
         util.inspect(iters.next())
-        
     }
 }
 

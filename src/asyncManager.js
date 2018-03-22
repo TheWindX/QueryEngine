@@ -35,6 +35,20 @@ class AsyncManager {
         }
     }
 
+    registFunc(modName, funcName){
+        if(modName === ''){
+            this.funcMap.set(funcName, funcName)
+        } else {
+            let funcs = this.modules.get(modName)
+            if(funcs) {
+                funcs.push(funcName)
+            } else {
+                this.modules.set(modName, [funcName])
+            }
+        }
+    }
+
+
     fromMod(modName, funcMap){
         let funcs = this.modules.get(modName)
         if(funcs === undefined){

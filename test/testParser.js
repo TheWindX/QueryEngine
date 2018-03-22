@@ -1,6 +1,5 @@
 let assert = require('assert')
 let util = require('../src/util')
-
 let q = require('../src/query')
 let PaserBase = require('../src/parserBase')
 
